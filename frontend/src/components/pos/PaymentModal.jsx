@@ -7,7 +7,9 @@ import {
   CheckCircle2, 
   Printer, 
   AlertCircle,
-  Loader2
+  Loader2,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 import { api } from '../../utils/api';
@@ -26,27 +28,64 @@ export default function PaymentModal() {
     settings, 
     clearCart,
     triggerPrintReceipt,
-    loadProducts
+    loadProducts,
+    addPaymentMethod,
+    deletePaymentMethod
   } = usePOS();
 
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const dynamicPaymentMethods = settings.paymentMethods && settings.paymentMethods.length > 0
+    ? settings.paymentMethods
+    : ['Cash', 'Card / POS', 'EasyPaisa', 'JazzCash', 'Raast / QR', 'Bank Transfer', 'Store Credit'];
+
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [paidAmount, setPaidAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showAddMethod, setShowAddMethod] = useState(false);
+  const [newMethodName, setNewMethodName] = useState('');
+  const [savingMethod, setSavingMethod] = useState(false);
 
   // Default paid amount to netTotal
   useEffect(() => {
     if (isPaymentModalOpen) {
+      setPaymentMethod(dynamicPaymentMethods[0] || 'Cash');
       setPaidAmount(String(netTotal));
       setError('');
+      setShowAddMethod(false);
+      setNewMethodName('');
     }
   }, [isPaymentModalOpen, netTotal]);
 
   if (!isPaymentModalOpen) return null;
 
+  const isCashType = paymentMethod.toLowerCase().includes('cash');
   const numericPaid = Number(paidAmount) || 0;
   const changeDue = Math.max(0, numericPaid - netTotal);
-  const isInsufficient = numericPaid < netTotal && paymentMethod === 'cash';
+  const isInsufficient = numericPaid < netTotal && isCashType;
+
+  const handleAddNewPaymentMethod = async (e) => {
+    e.preventDefault();
+    if (!newMethodName.trim()) return;
+    setSavingMethod(true);
+    try {
+      await addPaymentMethod(newMethodName.trim());
+      setPaymentMethod(newMethodName.trim());
+      setNewMethodName('');
+      setShowAddMethod(false);
+    } catch (err) {
+      setError(err.message || "Failed to add payment method");
+    } finally {
+      setSavingMethod(false);
+    }
+  };
+
+  const getMethodIcon = (name) => {
+    const lower = name.toLowerCase();
+    if (lower.includes('cash')) return Banknote;
+    if (lower.includes('card') || lower.includes('pos')) return CreditCard;
+    if (lower.includes('wallet') || lower.includes('paisa') || lower.includes('jazz') || lower.includes('raast') || lower.includes('qr') || lower.includes('pay')) return Smartphone;
+    return CreditCard;
+  };
 
   // Quick Cash Preset chips
   const presets = [
@@ -141,41 +180,77 @@ export default function PaymentModal() {
 
           {/* Payment Method Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
-              Payment Method
-            </label>
-            <div className="grid grid-cols-3 gap-2.5">
-              {[
-                { id: 'cash', label: 'Cash', icon: Banknote },
-                { id: 'card', label: 'Card / POS', icon: CreditCard },
-                { id: 'mobile_wallet', label: 'Mobile Wallet', icon: Smartphone },
-              ].map((m) => {
-                const Icon = m.icon;
-                const isSelected = paymentMethod === m.id;
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Payment Method
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowAddMethod(!showAddMethod)}
+                className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 hover:underline"
+              >
+                <Plus size={13} />
+                <span>+ Custom Method</span>
+              </button>
+            </div>
+
+            {showAddMethod && (
+              <form onSubmit={handleAddNewPaymentMethod} className="flex items-center gap-2 mb-3 p-2 bg-slate-900 border border-indigo-500/40 rounded-xl animate-fade-in">
+                <input 
+                  type="text" 
+                  placeholder="e.g. Nayapay, SadaPay, Cheque..." 
+                  value={newMethodName} 
+                  onChange={(e) => setNewMethodName(e.target.value)} 
+                  className="flex-1 bg-slate-800 text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-white focus:outline-none focus:border-indigo-500 placeholder-slate-500" 
+                  autoFocus 
+                />
+                <button 
+                  type="submit" 
+                  disabled={savingMethod || !newMethodName.trim()} 
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold"
+                >
+                  {savingMethod ? 'Adding...' : 'Add'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddMethod(false)} 
+                  className="px-2 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </form>
+            )}
+
+            <div className="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1">
+              {dynamicPaymentMethods.map((mName) => {
+                const Icon = getMethodIcon(mName);
+                const isSelected = paymentMethod === mName;
                 return (
                   <button
-                    key={m.id}
+                    key={mName}
                     type="button"
                     onClick={() => {
-                      setPaymentMethod(m.id);
-                      if (m.id !== 'cash') setPaidAmount(String(netTotal));
+                      setPaymentMethod(mName);
+                      if (!mName.toLowerCase().includes('cash')) {
+                        setPaidAmount(String(netTotal));
+                      }
                     }}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-xs font-semibold gap-1.5 transition-all ${
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border text-xs font-semibold gap-1.5 transition-all text-center ${
                       isSelected
                         ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
                         : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-800'
                     }`}
                   >
-                    <Icon size={20} />
-                    <span>{m.label}</span>
+                    <Icon size={18} />
+                    <span className="truncate w-full">{mName}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Cash Amount Tendered */}
-          {paymentMethod === 'cash' && (
+          {/* Cash Amount Tendered vs Digital Pay Confirmation */}
+          {isCashType ? (
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
@@ -210,6 +285,21 @@ export default function PaymentModal() {
                   </button>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400">
+                  <CheckCircle2 size={22} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-indigo-300 block">{paymentMethod}</span>
+                  <span className="text-xs text-slate-400">Instant digital checkout — No cash change required</span>
+                </div>
+              </div>
+              <span className="text-lg font-mono font-bold text-emerald-400">
+                {settings.currency} {netTotal.toLocaleString()}
+              </span>
             </div>
           )}
 

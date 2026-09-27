@@ -9,16 +9,34 @@ import {
   Info, 
   Terminal,
   HelpCircle,
-  FileText
+  FileText,
+  Plus,
+  Trash2,
+  Tag,
+  CreditCard
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 import { api } from '../utils/api';
 
 export default function Settings() {
-  const { settings, setSettings, loadSettings, triggerPrintReceipt } = usePOS();
+  const { 
+    settings, 
+    setSettings, 
+    loadSettings, 
+    triggerPrintReceipt,
+    addCategory,
+    deleteCategory,
+    addPaymentMethod,
+    deletePaymentMethod
+  } = usePOS();
   const [formData, setFormData] = useState({ ...settings });
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Inline category and payment inputs
+  const [newProdCat, setNewProdCat] = useState('');
+  const [newExpCat, setNewExpCat] = useState('');
+  const [newPayMethod, setNewPayMethod] = useState('');
 
   useEffect(() => {
     setFormData({ ...settings });
@@ -289,7 +307,174 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* ── Section 3: Pro POS Tip: Kiosk Silent Printing Setup ── */}
+        {/* ── Section 3: Dynamic Product Categories, Expense Categories & Payment Methods ── */}
+        <div className="p-6 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl space-y-6">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Tag size={18} />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-white text-base">Dynamic Categories & Payment Methods</h3>
+              <p className="text-xs text-slate-400">Add or remove custom product categories, expense classifications, and checkout payment methods</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            
+            {/* Product Categories */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Product Categories ({settings.productCategories?.length || 0})
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(settings.productCategories || []).map((cat) => (
+                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-medium text-slate-200">
+                    <span>{cat}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm(`Remove category "${cat}"?`)) {
+                          await deleteCategory('product', cat);
+                          await loadSettings();
+                        }
+                      }}
+                      className="text-slate-500 hover:text-rose-400 ml-0.5"
+                      title="Remove category"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 max-w-sm">
+                <input
+                  type="text"
+                  placeholder="New product category..."
+                  value={newProdCat}
+                  onChange={(e) => setNewProdCat(e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!newProdCat.trim()) return;
+                    await addCategory('product', newProdCat.trim());
+                    await loadSettings();
+                    setNewProdCat('');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
+                >
+                  + Add
+                </button>
+              </div>
+            </div>
+
+            {/* Expense Categories */}
+            <div className="pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Expense Categories ({settings.expenseCategories?.length || 0})
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(settings.expenseCategories || []).map((cat) => (
+                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-medium text-amber-300">
+                    <span>{cat}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm(`Remove expense category "${cat}"?`)) {
+                          await deleteCategory('expense', cat);
+                          await loadSettings();
+                        }
+                      }}
+                      className="text-slate-500 hover:text-rose-400 ml-0.5"
+                      title="Remove expense category"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 max-w-sm">
+                <input
+                  type="text"
+                  placeholder="New expense category (e.g. Fuel, Tea)..."
+                  value={newExpCat}
+                  onChange={(e) => setNewExpCat(e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!newExpCat.trim()) return;
+                    await addCategory('expense', newExpCat.trim());
+                    await loadSettings();
+                    setNewExpCat('');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
+                >
+                  + Add
+                </button>
+              </div>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Payment Methods ({settings.paymentMethods?.length || 0})
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(settings.paymentMethods || []).map((method) => (
+                  <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-medium text-emerald-400">
+                    <span>{method}</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm(`Remove payment method "${method}"?`)) {
+                          await deletePaymentMethod(method);
+                          await loadSettings();
+                        }
+                      }}
+                      className="text-slate-500 hover:text-rose-400 ml-0.5"
+                      title="Remove payment method"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 max-w-sm">
+                <input
+                  type="text"
+                  placeholder="New payment method (e.g. Nayapay, Voucher)..."
+                  value={newPayMethod}
+                  onChange={(e) => setNewPayMethod(e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!newPayMethod.trim()) return;
+                    await addPaymentMethod(newPayMethod.trim());
+                    await loadSettings();
+                    setNewPayMethod('');
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
+                >
+                  + Add
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── Section 4: Pro POS Tip: Kiosk Silent Printing Setup ── */}
         <div className="p-6 rounded-3xl bg-indigo-950/30 border border-indigo-500/20 shadow-xl space-y-3">
           <div className="flex items-center gap-2">
             <Terminal size={18} className="text-indigo-400" />

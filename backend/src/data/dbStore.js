@@ -40,10 +40,33 @@ function loadLocalStore() {
       const parsed = JSON.parse(content);
       if (parsed.products && parsed.products.length > 0) localStore.products = parsed.products;
       if (parsed.orders) localStore.orders = parsed.orders;
-      if (parsed.settings) localStore.settings = { ...initialSettings, ...parsed.settings };
+      if (parsed.settings) {
+        localStore.settings = { ...initialSettings, ...parsed.settings };
+        if (!Array.isArray(localStore.settings.productCategories) || localStore.settings.productCategories.length === 0) {
+          localStore.settings.productCategories = [...initialSettings.productCategories];
+        }
+        if (!Array.isArray(localStore.settings.expenseCategories) || localStore.settings.expenseCategories.length === 0) {
+          localStore.settings.expenseCategories = [...initialSettings.expenseCategories];
+        }
+        if (!Array.isArray(localStore.settings.paymentMethods) || localStore.settings.paymentMethods.length === 0) {
+          localStore.settings.paymentMethods = [...initialSettings.paymentMethods];
+        }
+      }
       if (parsed.users && parsed.users.length > 0) localStore.users = parsed.users;
       if (parsed.purchases) localStore.purchases = parsed.purchases;
       if (parsed.expenses) localStore.expenses = parsed.expenses;
+
+      // Ensure every product has images array
+      if (Array.isArray(localStore.products)) {
+        localStore.products = localStore.products.map(p => {
+          let imgs = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
+          return {
+            ...p,
+            image: imgs[0] || p.image || '',
+            images: imgs
+          };
+        });
+      }
     } else {
       saveLocalStore();
     }
@@ -164,35 +187,54 @@ export const db = {
     }
   },
 
-  async createProduct(data) {
+  async createProduct(productData) {
+    let images = Array.isArray(productData.images) && productData.images.length > 0 
+      ? productData.images 
+      : (productData.image ? [productData.image] : []);
+    const image = images[0] || productData.image || '';
+
     if (isMongoConnected) {
-      return await Product.create(data);
+      const existing = await Product.findOne({ barcode: productData.barcode });
+      if (existing) throw new Error("A product with this barcode already exists!");
+      return await Product.create({
+        ...productData,
+        image,
+        images
+      });
     } else {
-      const exists = localStore.products.find(p => p.barcode === data.barcode);
-      if (exists) throw new Error(`Product with barcode "${data.barcode}" already exists.`);
+      const existing = localStore.products.find(p => p.barcode === productData.barcode);
+      if (existing) throw new Error("A product with this barcode already exists!");
       const newProduct = {
-        ...data,
+        ...productData,
+        image,
+        images,
         _id: `prod_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: new Date().toISOString()
       };
-      localStore.products.unshift(newProduct);
+      localStore.products.push(newProduct);
       saveLocalStore();
       return newProduct;
     }
   },
 
-  async updateProduct(id, data) {
+  async updateProduct(id, updateData) {
+    let images = updateData.images;
+    if (images && !Array.isArray(images)) images = [images];
+    if (!images && updateData.image) images = [updateData.image];
+    const image = (images && images.length > 0) ? images[0] : updateData.image;
+
+    const finalData = { ...updateData };
+    if (images !== undefined) finalData.images = images;
+    if (image !== undefined) finalData.image = image;
+
     if (isMongoConnected) {
-      return await Product.findByIdAndUpdate(id, data, { new: true });
+      const updated = await Product.findByIdAndUpdate(id, finalData, { new: true });
+      if (!updated) throw new Error("Product not found");
+      return updated;
     } else {
       const index = localStore.products.findIndex(p => p._id === id);
       if (index === -1) throw new Error("Product not found");
-      localStore.products[index] = {
-        ...localStore.products[index],
-        ...data,
-        updatedAt: new Date().toISOString()
-      };
+      localStore.products[index] = { ...localStore.products[index], ...finalData };
       saveLocalStore();
       return localStore.products[index];
     }
@@ -247,24 +289,7 @@ export const db = {
     if (!isMongoConnected) saveLocalStore();
   },
 
-  // ── Orders (Sales) ──
-  async createOrder(orderData) {
-    if (isMongoConnected) {
-      const order = await Order.create(orderData);
-      await this.decrementStock(orderData.items);
-      return order;
-    } else {
-      const newOrder = {
-        ...orderData,
-        _id: `ord_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        createdAt: new Date().toISOString()
-      };
-      localStore.orders.unshift(newOrder);
-      await this.decrementStock(orderData.items);
-      saveLocalStore();
-      return newOrder;
-    }
-  },
+
 
   async getOrders({ limit = 50, search = '' } = {}) {
     if (isMongoConnected) {
@@ -345,19 +370,52 @@ export const db = {
     }
   },
 
-  async createExpense(data) {
+
+
+  async createExpense(expenseData) {
+    let images = Array.isArray(expenseData.receiptImages) && expenseData.receiptImages.length > 0
+      ? expenseData.receiptImages
+      : (expenseData.receiptImage ? [expenseData.receiptImage] : []);
+    const fullData = {
+      ...expenseData,
+      receiptImage: images[0] || expenseData.receiptImage || '',
+      receiptImages: images,
+      date: expenseData.date || new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
     if (isMongoConnected) {
-      return await Expense.create(data);
+      return await Expense.create(fullData);
     } else {
       const newExpense = {
-        ...data,
-        _id: `exp_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        date: data.date || new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        ...fullData,
+        _id: `exp_${Date.now()}_${Math.floor(Math.random() * 1000)}`
       };
       localStore.expenses.unshift(newExpense);
       saveLocalStore();
       return newExpense;
+    }
+  },
+
+  async updateExpense(id, updateData) {
+    let images = updateData.receiptImages;
+    if (images && !Array.isArray(images)) images = [images];
+    if (!images && updateData.receiptImage) images = [updateData.receiptImage];
+    const receiptImage = (images && images.length > 0) ? images[0] : updateData.receiptImage;
+
+    const finalData = { ...updateData };
+    if (images !== undefined) finalData.receiptImages = images;
+    if (receiptImage !== undefined) finalData.receiptImage = receiptImage;
+
+    if (isMongoConnected) {
+      const updated = await Expense.findByIdAndUpdate(id, finalData, { new: true });
+      if (!updated) throw new Error("Expense not found");
+      return updated;
+    } else {
+      const index = localStore.expenses.findIndex(e => e._id === id);
+      if (index === -1) throw new Error("Expense not found");
+      localStore.expenses[index] = { ...localStore.expenses[index], ...finalData };
+      saveLocalStore();
+      return localStore.expenses[index];
     }
   },
 
@@ -391,6 +449,105 @@ export const db = {
       return await Setting.findByIdAndUpdate(s._id, data, { new: true });
     } else {
       localStore.settings = { ...localStore.settings, ...data };
+      saveLocalStore();
+      return localStore.settings;
+    }
+  },
+
+  // Dynamic Product Categories
+  async addProductCategory(catName) {
+    if (isMongoConnected) {
+      const s = await this.getSettings();
+      if (!s.productCategories.includes(catName)) {
+        s.productCategories.push(catName);
+        await s.save();
+      }
+      return s;
+    } else {
+      if (!localStore.settings.productCategories) localStore.settings.productCategories = [...initialSettings.productCategories];
+      if (!localStore.settings.productCategories.includes(catName)) {
+        localStore.settings.productCategories.push(catName);
+        saveLocalStore();
+      }
+      return localStore.settings;
+    }
+  },
+
+  async deleteProductCategory(catName) {
+    if (isMongoConnected) {
+      const s = await this.getSettings();
+      s.productCategories = s.productCategories.filter(c => c !== catName);
+      await s.save();
+      return s;
+    } else {
+      if (!localStore.settings.productCategories) localStore.settings.productCategories = [...initialSettings.productCategories];
+      localStore.settings.productCategories = localStore.settings.productCategories.filter(c => c !== catName);
+      saveLocalStore();
+      return localStore.settings;
+    }
+  },
+
+  // Dynamic Expense Categories
+  async addExpenseCategory(catName) {
+    if (isMongoConnected) {
+      const s = await this.getSettings();
+      if (!s.expenseCategories.includes(catName)) {
+        s.expenseCategories.push(catName);
+        await s.save();
+      }
+      return s;
+    } else {
+      if (!localStore.settings.expenseCategories) localStore.settings.expenseCategories = [...initialSettings.expenseCategories];
+      if (!localStore.settings.expenseCategories.includes(catName)) {
+        localStore.settings.expenseCategories.push(catName);
+        saveLocalStore();
+      }
+      return localStore.settings;
+    }
+  },
+
+  async deleteExpenseCategory(catName) {
+    if (isMongoConnected) {
+      const s = await this.getSettings();
+      s.expenseCategories = s.expenseCategories.filter(c => c !== catName);
+      await s.save();
+      return s;
+    } else {
+      if (!localStore.settings.expenseCategories) localStore.settings.expenseCategories = [...initialSettings.expenseCategories];
+      localStore.settings.expenseCategories = localStore.settings.expenseCategories.filter(c => c !== catName);
+      saveLocalStore();
+      return localStore.settings;
+    }
+  },
+
+  // Dynamic Payment Methods
+  async addPaymentMethod(methodName) {
+    if (isMongoConnected) {
+      const s = await this.getSettings();
+      if (!s.paymentMethods.includes(methodName)) {
+        s.paymentMethods.push(methodName);
+        await s.save();
+      }
+      return s;
+    } else {
+      if (!localStore.settings.paymentMethods) localStore.settings.paymentMethods = [...initialSettings.paymentMethods];
+      if (!localStore.settings.paymentMethods.includes(methodName)) {
+        localStore.settings.paymentMethods.push(methodName);
+        saveLocalStore();
+      }
+      return localStore.settings;
+    }
+  },
+
+  async deletePaymentMethod(methodName) {
+    if (isMongoConnected) {
+      const s = await this.getSettings();
+      s.paymentMethods = s.paymentMethods.filter(m => m !== methodName);
+      await s.save();
+      return s;
+    } else {
+      if (!localStore.settings.paymentMethods) localStore.settings.paymentMethods = [...initialSettings.paymentMethods];
+      localStore.settings.paymentMethods = localStore.settings.paymentMethods.filter(m => m !== methodName);
       saveLocalStore();
       return localStore.settings;
     }

@@ -25,10 +25,14 @@ export const getProductByBarcode = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { barcode, name, category, price, costPrice, stock, minStock, image } = req.body;
+    const { barcode, name, category, price, costPrice, stock, minStock, image, images, description } = req.body;
     if (!barcode || !name || price === undefined) {
       return res.status(400).json({ success: false, message: "Barcode, name, and price are required." });
     }
+    const imgs = Array.isArray(images) && images.length > 0 
+      ? images 
+      : (image ? [image] : []);
+
     const product = await db.createProduct({
       barcode: barcode.trim(),
       name: name.trim(),
@@ -37,7 +41,9 @@ export const createProduct = async (req, res) => {
       costPrice: Number(costPrice || 0),
       stock: Number(stock || 0),
       minStock: Number(minStock || 5),
-      image: image || ''
+      image: imgs[0] || image || '',
+      images: imgs,
+      description: description || ''
     });
     res.status(201).json({ success: true, data: product, message: "Product created successfully!" });
   } catch (error) {

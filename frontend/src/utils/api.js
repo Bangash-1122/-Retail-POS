@@ -49,12 +49,17 @@ export const api = {
     return request(`/expenses${query ? `?${query}` : ''}`);
   },
   createExpense: (data) => request('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  updateExpense: (id, data) => request(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteExpense: (id) => request(`/expenses/${id}`, { method: 'DELETE' }),
 
   // Analytics
   getAnalytics: () => request('/analytics'),
 
-  // Settings
+  // Settings & Meta
   getSettings: () => request('/settings'),
   updateSettings: (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) }),
+  addCategory: (type, name) => request('/settings/category', { method: 'POST', body: JSON.stringify({ type, name }) }),
+  deleteCategory: (type, name) => request('/settings/category', { method: 'DELETE', body: JSON.stringify({ type, name }) }),
+  addPaymentMethod: (name) => request('/settings/payment-method', { method: 'POST', body: JSON.stringify({ name }) }),
+  deletePaymentMethod: (name) => request('/settings/payment-method', { method: 'DELETE', body: JSON.stringify({ name }) }),
 };

@@ -6,23 +6,14 @@ import {
   SlidersHorizontal, 
   RefreshCw,
   ShoppingBag,
-  Zap
+  Zap,
+  FolderPlus,
+  Plus
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 import ProductCard from '../components/pos/ProductCard';
 import CartDrawer from '../components/pos/CartDrawer';
-import { playBeep } from '../utils/sound';
-
-const CATEGORIES = [
-  'All',
-  'Groceries',
-  'Beverages',
-  'Snacks',
-  'Dairy',
-  'Bakery',
-  'Personal Care',
-  'Household',
-];
+import { api } from '../utils/api';
 
 export default function POSRegister() {
   const { 
@@ -31,6 +22,7 @@ export default function POSRegister() {
     loadProducts, 
     addToCart, 
     settings, 
+    loadSettings,
     setIsPaymentModalOpen,
     clearCart
   } = usePOS();
@@ -38,7 +30,14 @@ export default function POSRegister() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [barcodeInput, setBarcodeInput] = useState('');
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
   const searchInputRef = useRef(null);
+
+  // Available categories from settings
+  const dynamicCategories = ['All', ...(settings?.productCategories || [
+    'Groceries', 'Beverages', 'Snacks', 'Dairy', 'Bakery', 'Personal Care', 'Household'
+  ])];
 
   // Global Keyboard Shortcuts (F2 for search, F4 for payment, Esc to clear)
   useEffect(() => {
@@ -50,23 +49,19 @@ export default function POSRegister() {
         e.preventDefault();
         setIsPaymentModalOpen(true);
       } else if (e.key === 'Escape') {
-        // Clear search or ask to clear
-        if (search) {
-          setSearch('');
-        }
+        if (search) setSearch('');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [search, setIsPaymentModalOpen]);
 
-  // Handle Barcode Scanner Input (Hardware scanners send string followed by Enter)
+  // Handle Barcode Scanner Input
   const handleBarcodeSubmit = (e) => {
     e.preventDefault();
     if (!barcodeInput.trim()) return;
 
     const term = barcodeInput.trim();
-    // Match by exact barcode or partial name
     const found = products.find(p => p.barcode === term || p.barcode.toLowerCase() === term.toLowerCase());
     
     if (found) {
@@ -74,6 +69,19 @@ export default function POSRegister() {
       setBarcodeInput('');
     } else {
       alert(`No product found with barcode "${term}"`);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCatName.trim()) return;
+    try {
+      await api.addCategory('product', newCatName.trim());
+      await loadSettings();
+      setSelectedCategory(newCatName.trim());
+      setNewCatName('');
+      setShowAddCat(false);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -146,10 +154,10 @@ export default function POSRegister() {
           </button>
         </div>
 
-        {/* Category Pills Navigation */}
+        {/* Dynamic Category Pills Navigation */}
         <div className="px-4 py-2.5 border-b border-slate-800/80 bg-[#0F172A]/30 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat;
+          {dynamicCategories.map((cat) => {
+            const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
             return (
               <button
                 key={cat}
@@ -164,14 +172,52 @@ export default function POSRegister() {
               </button>
             );
           })}
+
+          {/* Inline Add Category Button */}
+          {showAddCat ? (
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                autoFocus
+                placeholder="Category name..."
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateCategory();
+                  if (e.key === 'Escape') setShowAddCat(false);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-900 border border-indigo-500 text-xs text-white focus:outline-none w-28"
+              />
+              <button
+                onClick={handleCreateCategory}
+                className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold"
+              >
+                ✓
+              </button>
+              <button
+                onClick={() => setShowAddCat(false)}
+                className="px-2 py-1 text-slate-400 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAddCat(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 border border-indigo-500/20 whitespace-nowrap transition-colors"
+            >
+              <Plus size={13} />
+              <span>Category</span>
+            </button>
+          )}
         </div>
 
-        {/* Quick Demo Barcode Scanner Chips for Instant Testing */}
-        <div className="px-4 py-1.5 bg-indigo-950/20 border-b border-indigo-900/30 flex items-center gap-2 overflow-x-auto text-[11px] text-slate-400">
+        {/* Quick Demo Barcode Scanner Chips */}
+        <div className="px-4 py-1.5 bg-indigo-950/20 border-b border-indigo-900/30 flex items-center gap-2 overflow-x-auto text-[11px] text-slate-400 no-scrollbar">
           <span className="font-semibold text-indigo-400 flex items-center gap-1 flex-shrink-0">
             <Zap size={12} /> Quick Scan:
           </span>
-          {products.slice(0, 5).map(p => (
+          {products.slice(0, 6).map(p => (
             <button
               key={p.barcode}
               onClick={() => addToCart(p, 1)}
@@ -182,7 +228,7 @@ export default function POSRegister() {
           ))}
         </div>
 
-        {/* Products Grid */}
+        {/* Products Grid with Multi-Image Card View */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           {loadingProducts ? (
             <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3">

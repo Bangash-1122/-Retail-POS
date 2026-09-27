@@ -42,6 +42,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  images: {
+    type: [String],
+    default: [],
+  },
+  description: {
+    type: String,
+    default: '',
+  }
 }, { timestamps: true });
 
 export const Product = mongoose.models.Product || mongoose.model('Product', productSchema);

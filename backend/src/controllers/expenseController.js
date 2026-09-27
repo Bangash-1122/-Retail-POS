@@ -12,19 +12,24 @@ export const getExpenses = async (req, res) => {
 
 export const createExpense = async (req, res) => {
   try {
-    const { title, category, amount, paymentMethod, date, notes, receiptImage, recordedBy } = req.body;
+    const { title, category, amount, paymentMethod, date, notes, receiptImage, receiptImages, recordedBy } = req.body;
     if (!title || !amount) {
       return res.status(400).json({ success: false, message: "Title and amount are required" });
     }
+
+    const images = Array.isArray(receiptImages) && receiptImages.length > 0
+      ? receiptImages
+      : (receiptImage ? [receiptImage] : []);
 
     const expense = await db.createExpense({
       title: title.trim(),
       category: category || 'Other',
       amount: Number(amount),
-      paymentMethod: paymentMethod || 'cash',
+      paymentMethod: paymentMethod || 'Cash',
       date: date || new Date().toISOString(),
       notes: notes || '',
-      receiptImage: receiptImage || '',
+      receiptImage: images[0] || '',
+      receiptImages: images,
       recordedBy: recordedBy || 'Admin'
     });
 
@@ -32,6 +37,20 @@ export const createExpense = async (req, res) => {
       success: true,
       message: "Expense recorded successfully!",
       data: expense
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await db.updateExpense(id, req.body);
+    res.json({
+      success: true,
+      message: "Expense updated successfully!",
+      data: updated
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

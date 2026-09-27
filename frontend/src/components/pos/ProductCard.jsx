@@ -1,12 +1,30 @@
-import React from 'react';
-import { Plus, Barcode, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Barcode, AlertTriangle, Images, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 
 export default function ProductCard({ product }) {
   const { addToCart, settings } = usePOS();
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
   const isLowStock = product.stock <= product.minStock && product.stock > 0;
   const isOutOfStock = product.stock <= 0;
+
+  // Prepare images list (supports multiple images or single fallback image)
+  const imageList = Array.isArray(product.images) && product.images.length > 0 
+    ? product.images 
+    : (product.image ? [product.image] : []);
+
+  const currentDisplayImage = imageList[currentImgIndex] || product.image;
+
+  const handleNextImage = (e) => {
+    e.stopPropagation();
+    setCurrentImgIndex((prev) => (prev + 1) % imageList.length);
+  };
+
+  const handlePrevImage = (e) => {
+    e.stopPropagation();
+    setCurrentImgIndex((prev) => (prev - 1 + imageList.length) % imageList.length);
+  };
 
   return (
     <div
@@ -19,10 +37,10 @@ export default function ProductCard({ product }) {
     >
       <div>
         {/* Product Image & Badges */}
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-800 mb-2.5">
-          {product.image ? (
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-800 mb-2.5 group/img">
+          {currentDisplayImage ? (
             <img
-              src={product.image}
+              src={currentDisplayImage}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
@@ -31,6 +49,34 @@ export default function ProductCard({ product }) {
             <div className="w-full h-full flex items-center justify-center text-slate-500 font-mono text-xs">
               No Image
             </div>
+          )}
+
+          {/* Multiple Images Navigation Controls */}
+          {imageList.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                title="Previous Photo"
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity z-10"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                title="Next Photo"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity z-10"
+              >
+                <ChevronRight size={14} />
+              </button>
+
+              {/* Photos Counter Badge */}
+              <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/70 text-slate-200 border border-white/10 flex items-center gap-1 backdrop-blur-md">
+                <Images size={10} />
+                <span>{currentImgIndex + 1}/{imageList.length}</span>
+              </span>
+            </>
           )}
 
           {/* Category Tag */}

@@ -200,6 +200,51 @@ export function POSProvider({ children }) {
     }
   };
 
+  // Category & Payment Dynamic Operations
+  const addCategory = async (type, name) => {
+    try {
+      const res = await api.addCategory(type, name);
+      if (res.data) setSettings(res.data);
+      return res.data;
+    } catch (err) {
+      console.error("Error adding category:", err);
+      throw err;
+    }
+  };
+
+  const deleteCategory = async (type, name) => {
+    try {
+      const res = await api.deleteCategory(type, name);
+      if (res.data) setSettings(res.data);
+      return res.data;
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      throw err;
+    }
+  };
+
+  const addPaymentMethod = async (name) => {
+    try {
+      const res = await api.addPaymentMethod(name);
+      if (res.data) setSettings(res.data);
+      return res.data;
+    } catch (err) {
+      console.error("Error adding payment method:", err);
+      throw err;
+    }
+  };
+
+  const deletePaymentMethod = async (name) => {
+    try {
+      const res = await api.deletePaymentMethod(name);
+      if (res.data) setSettings(res.data);
+      return res.data;
+    } catch (err) {
+      console.error("Error deleting payment method:", err);
+      throw err;
+    }
+  };
+
   return (
     <POSContext.Provider
       value={{
@@ -238,6 +283,10 @@ export function POSProvider({ children }) {
         activeReceipt,
         setActiveReceipt,
         triggerPrintReceipt,
+        addCategory,
+        deleteCategory,
+        addPaymentMethod,
+        deletePaymentMethod,
       }}
     >
       {children}

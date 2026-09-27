@@ -5,14 +5,14 @@ const expenseSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true, 
-    enum: ['Utilities', 'Rent', 'Salaries', 'Refreshment & Tea', 'Transportation', 'Maintenance', 'Packaging', 'Marketing', 'Other'],
-    default: 'Other'
+    default: 'General'
   },
   amount: { type: Number, required: true, min: 1 },
-  paymentMethod: { type: String, enum: ['cash', 'bank', 'card', 'mobile_wallet'], default: 'cash' },
+  paymentMethod: { type: String, default: 'Cash' },
   date: { type: Date, default: Date.now },
   notes: { type: String, default: '' },
   receiptImage: { type: String, default: '' },
+  receiptImages: { type: [String], default: [] },
   recordedBy: { type: String, default: 'Admin' }
 }, { timestamps: true });
 
