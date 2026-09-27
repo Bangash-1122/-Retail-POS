@@ -18,19 +18,56 @@ import {
   User,
   ShieldCheck,
   UserCheck,
-  Users
+  Users,
+  Maximize,
+  Minimize,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
+import ShortcutsModal from './ShortcutsModal';
+import PWAInstallModal from './PWAInstallModal';
 
 export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
   const { cart, netTotal, settings, setSettings, currentUser, logout } = usePOS();
   const [time, setTime] = useState(new Date());
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showPWAModal, setShowPWAModal] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
 
   const totalItemsCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
@@ -106,9 +143,32 @@ export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
             })}
           </nav>
 
-          {/* Right Action Widgets (Sound, Time, Shortcuts, User Profile) */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Action Widgets (Sound, Fullscreen, PWA Install, Shortcuts, User Profile) */}
+          <div className="flex items-center gap-2">
             
+            {/* PWA Mobile & Desktop Web App Install Button */}
+            <button
+              onClick={() => setShowPWAModal(true)}
+              title="Install RetailPOS as Web App on Android, iOS & Desktop"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600/20 to-violet-600/20 hover:from-indigo-600/35 hover:to-violet-600/35 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-semibold transition-all"
+            >
+              <Smartphone size={14} className="text-indigo-400" />
+              <span className="hidden md:inline">Install App</span>
+            </button>
+
+            {/* Full Screen Kiosk Mode Toggle [F9] */}
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit Fullscreen Mode [F9]" : "Enter Full Screen Kiosk Mode [F9]"}
+              className={`p-2 rounded-xl border transition-colors ${
+                isFullscreen
+                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
+                  : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+            </button>
+
             {/* Sound Toggle */}
             <button
               onClick={toggleSound}
@@ -122,10 +182,10 @@ export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
               {settings.enableBeep ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
 
-            {/* Shortcuts Help */}
+            {/* Shortcuts Help [F1] */}
             <button
               onClick={() => setShowShortcuts(true)}
-              title="Keyboard Shortcuts"
+              title="Keyboard Shortcuts Cheat Sheet [F1]"
               className="p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-white transition-colors"
             >
               <HelpCircle size={16} />
@@ -219,45 +279,9 @@ export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
         </div>
       </header>
 
-      {/* Keyboard Shortcuts Modal */}
-      {showShortcuts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#111827] border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-indigo-400" />
-                <h3 className="font-display font-bold text-white text-base">POS Keyboard Shortcuts</h3>
-              </div>
-              <button
-                onClick={() => setShowShortcuts(false)}
-                className="text-slate-400 hover:text-white text-sm"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="mt-4 space-y-2.5 text-xs text-slate-300">
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/60">
-                <span>Focus Barcode / Product Search</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-indigo-300 font-mono">F2</kbd>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/60">
-                <span>Open Checkout / Payment Dialog</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-indigo-300 font-mono">F4</kbd>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/60">
-                <span>Clear Current Cart</span>
-                <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-indigo-300 font-mono">Esc</kbd>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowShortcuts(false)}
-              className="mt-6 w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors"
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Global Shortcuts Modal & PWA Install Modal */}
+      <ShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <PWAInstallModal isOpen={showPWAModal} onClose={() => setShowPWAModal(false)} />
     </>
   );
 }

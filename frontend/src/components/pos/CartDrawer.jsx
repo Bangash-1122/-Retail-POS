@@ -11,7 +11,8 @@ import {
   ArrowRight,
   Percent,
   Check,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 
@@ -31,13 +32,20 @@ export default function CartDrawer({ onClose }) {
     customer, 
     setCustomer, 
     settings,
-    setIsPaymentModalOpen 
+    setIsPaymentModalOpen,
+    quickCashSale
   } = usePOS();
 
   const handleCheckoutClick = () => {
     if (cart.length === 0) return;
     if (onClose) onClose();
     setIsPaymentModalOpen(true);
+  };
+
+  const handleQuickCash = async () => {
+    if (cart.length === 0) return;
+    if (onClose) onClose();
+    await quickCashSale();
   };
 
   return (
@@ -248,21 +256,43 @@ export default function CartDrawer({ onClose }) {
           </div>
         </div>
 
-        {/* Checkout Button */}
-        <button
-          disabled={cart.length === 0}
-          onClick={handleCheckoutClick}
-          className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-            cart.length === 0
-              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/60'
-              : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-glowEmerald active:scale-[0.99] cursor-pointer'
-          }`}
-        >
-          <Receipt size={18} />
-          <span>PAY & PRINT RECEIPT</span>
-          <span className="ml-1 text-xs opacity-75 font-mono">[F4]</span>
-          <ArrowRight size={16} />
-        </button>
+        {/* Checkout Buttons (Pay & Quick Cash) */}
+        <div className="space-y-2">
+          {/* Quick Cash Sale Button [F8] */}
+          <button
+            disabled={cart.length === 0}
+            onClick={handleQuickCash}
+            className={`w-full py-2.5 px-3 rounded-xl font-display font-bold text-xs flex items-center justify-between transition-all ${
+              cart.length === 0
+                ? 'bg-slate-800/80 text-slate-500 cursor-not-allowed border border-slate-700/60'
+                : 'bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 hover:text-white cursor-pointer active:scale-[0.99]'
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <Zap size={14} className="text-emerald-400" />
+              <span>QUICK CASH SALE</span>
+            </div>
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-emerald-400 font-mono text-[10px]">
+              F8
+            </kbd>
+          </button>
+
+          {/* Full Pay & Print Receipt Button [F4] */}
+          <button
+            disabled={cart.length === 0}
+            onClick={handleCheckoutClick}
+            className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+              cart.length === 0
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/60'
+                : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-glow active:scale-[0.99] cursor-pointer'
+            }`}
+          >
+            <Receipt size={17} />
+            <span>PAY & PRINT RECEIPT</span>
+            <span className="ml-1 text-xs opacity-75 font-mono">[F4]</span>
+            <ArrowRight size={15} />
+          </button>
+        </div>
       </div>
 
     </div>

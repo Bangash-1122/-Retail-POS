@@ -26,7 +26,8 @@ export default function POSRegister() {
     settings, 
     loadSettings,
     setIsPaymentModalOpen,
-    clearCart
+    clearCart,
+    quickCashSale
   } = usePOS();
 
   const [search, setSearch] = useState('');
@@ -42,7 +43,7 @@ export default function POSRegister() {
     'Groceries', 'Beverages', 'Snacks', 'Dairy', 'Bakery', 'Personal Care', 'Household'
   ])];
 
-  // Global Keyboard Shortcuts (F2 for search, F4 for payment, Esc to clear)
+  // Global Keyboard Shortcuts (F2 for search, F4 for payment, F8 for quick cash, Esc to clear)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'F2') {
@@ -51,13 +52,16 @@ export default function POSRegister() {
       } else if (e.key === 'F4') {
         e.preventDefault();
         setIsPaymentModalOpen(true);
+      } else if (e.key === 'F8') {
+        e.preventDefault();
+        quickCashSale();
       } else if (e.key === 'Escape') {
         if (search) setSearch('');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [search, setIsPaymentModalOpen]);
+  }, [search, setIsPaymentModalOpen, quickCashSale]);
 
   // Handle Barcode Scanner Input
   const handleBarcodeSubmit = (e) => {

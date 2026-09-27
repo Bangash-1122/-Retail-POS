@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { POSProvider, usePOS } from './context/POSContext';
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
@@ -17,6 +17,53 @@ import ReceiptModal from './components/pos/ReceiptModal';
 function MainLayout() {
   const [activeTab, setActiveTab] = useState('landing');
   const { currentUser } = usePOS();
+
+  // Global Keyboard Shortcuts (F9 Fullscreen, Alt+1-8 Navigation, F2 Quick Register)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // F9: Fullscreen toggle
+      if (e.key === 'F9') {
+        e.preventDefault();
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          const el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+        return;
+      }
+
+      // Alt + Number: Tab Switcher
+      if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+        const tabMap = {
+          '1': 'register',
+          '2': 'inventory',
+          '3': 'purchases',
+          '4': 'expenses',
+          '5': 'sales',
+          '6': 'dashboard',
+          '7': 'staff',
+          '8': 'settings'
+        };
+        if (tabMap[e.key]) {
+          e.preventDefault();
+          setActiveTab(tabMap[e.key]);
+          return;
+        }
+      }
+
+      // If F2 is pressed and not currently in register, jump to register
+      if (e.key === 'F2' && activeTab !== 'register') {
+        e.preventDefault();
+        setActiveTab('register');
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [activeTab]);
 
   return (
     <div className="flex flex-col h-screen bg-[#080C15] text-slate-100 overflow-hidden select-none">

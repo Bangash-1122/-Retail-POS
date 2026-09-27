@@ -200,6 +200,49 @@ export function POSProvider({ children }) {
     }
   };
 
+  // Quick Cash Sale [F8 Shortcut]
+  const quickCashSale = async () => {
+    if (cart.length === 0) {
+      alert("Cart is empty! Add products first before checking out.");
+      return null;
+    }
+    try {
+      const orderPayload = {
+        customerName: customer.name || 'Walk-in Customer',
+        customerPhone: customer.phone || '',
+        items: cart.map(i => ({
+          productId: i.productId,
+          barcode: i.barcode,
+          name: i.name,
+          price: i.price,
+          qty: i.qty,
+          total: i.total
+        })),
+        subtotal,
+        discount: Number(discount || 0),
+        taxRate: applyTax ? (settings.taxRate || 0) : 0,
+        taxAmount,
+        total: netTotal,
+        paymentMethod: 'cash',
+        amountPaid: netTotal,
+        changeDue: 0,
+        status: 'completed',
+        cashier: currentUser?.name || 'Cashier',
+        notes: 'Instant Cash Checkout [F8]'
+      };
+
+      const res = await api.createOrder(orderPayload);
+      playSuccessSound(settings.enableBeep);
+      clearCart();
+      loadProducts();
+      triggerPrintReceipt(res.data);
+      return res.data;
+    } catch (err) {
+      alert("Quick checkout failed: " + err.message);
+      return null;
+    }
+  };
+
   // Category & Payment Dynamic Operations
   const addCategory = async (type, name) => {
     try {
@@ -283,6 +326,7 @@ export function POSProvider({ children }) {
         activeReceipt,
         setActiveReceipt,
         triggerPrintReceipt,
+        quickCashSale,
         addCategory,
         deleteCategory,
         addPaymentMethod,
