@@ -17,9 +17,12 @@ async function request(url, options = {}) {
 }
 
 export const api = {
-  // Auth
+  // Auth & Staff Management
   login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
   getUsers: () => request('/auth/users'),
+  createUser: (data) => request('/auth/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id, data) => request(`/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id) => request(`/auth/users/${id}`, { method: 'DELETE' }),
 
   // Products
   getProducts: (params = {}) => {
@@ -31,17 +34,21 @@ export const api = {
   updateProduct: (id, data) => request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteProduct: (id) => request(`/products/${id}`, { method: 'DELETE' }),
 
-  // Orders / Sales
+  // Orders / Sales (Full CRUD + Void with Inventory Restore)
   createOrder: (data) => request('/orders', { method: 'POST', body: JSON.stringify(data) }),
   getOrders: (params = {}) => {
     const query = new URLSearchParams(params).toString();
     return request(`/orders${query ? `?${query}` : ''}`);
   },
   getOrderById: (id) => request(`/orders/${id}`),
+  updateOrder: (id, data) => request(`/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteOrder: (id) => request(`/orders/${id}`, { method: 'DELETE' }),
 
-  // Purchases (Stock In)
+  // Purchases (Stock In - Full CRUD + Rollback)
   getPurchases: () => request('/purchases'),
   createPurchase: (data) => request('/purchases', { method: 'POST', body: JSON.stringify(data) }),
+  updatePurchase: (id, data) => request(`/purchases/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deletePurchase: (id) => request(`/purchases/${id}`, { method: 'DELETE' }),
 
   // Expenses
   getExpenses: (params = {}) => {

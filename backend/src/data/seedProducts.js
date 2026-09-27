@@ -266,19 +266,53 @@ export const initialSettings = {
 
 export const initialUsers = [
   {
+    _id: "user_owner_01",
+    name: "Muhammad Ubaid (Store Owner)",
+    email: "owner@retailpos.com",
+    password: "owner123",
+    role: "owner",
+    phone: "+92 300 9876543",
+    status: "active",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+  },
+  {
     _id: "user_admin_01",
-    name: "Muhammad Ubaid",
+    name: "Muhammad Ubaid (Admin)",
     email: "admin@retailpos.com",
     password: "admin123",
-    role: "admin",
+    role: "owner",
+    phone: "+92 300 9876543",
+    status: "active",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    _id: "user_manager_01",
+    name: "Hamza Tariq (Store Manager)",
+    email: "manager@retailpos.com",
+    password: "manager123",
+    role: "manager",
+    phone: "+92 321 4455667",
+    status: "active",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    _id: "user_salesman_01",
+    name: "Ali Raza (Lead Salesman)",
+    email: "salesman@retailpos.com",
+    password: "salesman123",
+    role: "salesman",
+    phone: "+92 333 1122334",
+    status: "active",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
   },
   {
     _id: "user_cashier_01",
     name: "Ali Raza (Terminal Cashier)",
     email: "cashier@retailpos.com",
     password: "cashier123",
-    role: "cashier",
+    role: "salesman",
+    phone: "+92 333 1122334",
+    status: "active",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
   }
 ];

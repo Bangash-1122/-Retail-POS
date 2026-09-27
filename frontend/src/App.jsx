@@ -10,6 +10,7 @@ import Expenses from './pages/Expenses';
 import SalesHistory from './pages/SalesHistory';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
+import Staff from './pages/Staff';
 import PaymentModal from './components/pos/PaymentModal';
 import ReceiptModal from './components/pos/ReceiptModal';
 
@@ -46,6 +47,7 @@ function MainLayout() {
         {activeTab === 'expenses' && <Expenses />}
         {activeTab === 'sales' && <SalesHistory />}
         {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'staff' && <Staff />}
         {activeTab === 'settings' && <Settings />}
       </main>
 

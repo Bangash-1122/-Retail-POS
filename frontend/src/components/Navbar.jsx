@@ -17,7 +17,8 @@ import {
   LogOut,
   User,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Users
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 
@@ -45,6 +46,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
     { id: 'expenses', label: 'Expenses', icon: DollarSign },
     { id: 'sales', label: 'Sales', icon: Receipt },
     { id: 'dashboard', label: 'Analytics', icon: BarChart3 },
+    { id: 'staff', label: 'Staff & Roles', icon: Users },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
@@ -143,23 +145,32 @@ export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
             {/* User Profile / Auth State */}
             {currentUser ? (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-                <div className="w-8 h-8 rounded-xl bg-slate-800 overflow-hidden border border-slate-700">
-                  {currentUser.avatar ? (
-                    <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs font-bold text-indigo-400">
-                      {currentUser.name[0]}
-                    </div>
-                  )}
-                </div>
-                <div className="hidden lg:block text-left">
-                  <p className="text-xs font-semibold text-slate-200 leading-tight">
-                    {currentUser.name.split(' ')[0]}
-                  </p>
-                  <span className="text-[10px] text-indigo-400 font-mono capitalize">
-                    {currentUser.role}
-                  </span>
-                </div>
+                <button
+                  onClick={() => setActiveTab('staff')}
+                  title="Manage Staff & Switch Roles"
+                  className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-slate-800 overflow-hidden border border-slate-700 flex items-center justify-center">
+                    {currentUser.avatar ? (
+                      <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs font-bold text-indigo-400">
+                        {currentUser.name?.[0] || 'U'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden lg:block text-left">
+                    <p className="text-xs font-semibold text-slate-200 leading-tight">
+                      {currentUser.name?.split(' ')[0] || 'User'}
+                    </p>
+                    <span className="text-[10px] text-indigo-400 font-mono capitalize flex items-center gap-0.5">
+                      {currentUser.role === 'owner' && '👑 '}
+                      {currentUser.role === 'manager' && '💼 '}
+                      {(currentUser.role === 'salesman' || currentUser.role === 'cashier') && '⚡ '}
+                      {currentUser.role || 'Staff'}
+                    </span>
+                  </div>
+                </button>
                 <button
                   onClick={logout}
                   title="Sign Out"

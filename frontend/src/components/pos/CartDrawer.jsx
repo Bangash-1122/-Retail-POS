@@ -10,11 +10,12 @@ import {
   Receipt, 
   ArrowRight,
   Percent,
-  Check
+  Check,
+  X
 } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 
-export default function CartDrawer() {
+export default function CartDrawer({ onClose }) {
   const { 
     cart, 
     updateCartQty, 
@@ -35,6 +36,7 @@ export default function CartDrawer() {
 
   const handleCheckoutClick = () => {
     if (cart.length === 0) return;
+    if (onClose) onClose();
     setIsPaymentModalOpen(true);
   };
 
@@ -55,16 +57,28 @@ export default function CartDrawer() {
           </div>
         </div>
 
-        {cart.length > 0 && (
-          <button
-            onClick={clearCart}
-            title="Clear Cart (Esc)"
-            className="flex items-center gap-1 px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
-          >
-            <Trash2 size={13} />
-            <span>Clear</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {cart.length > 0 && (
+            <button
+              onClick={clearCart}
+              title="Clear Cart (Esc)"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
+            >
+              <Trash2 size={13} />
+              <span>Clear</span>
+            </button>
+          )}
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              title="Close Cart"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Customer Quick Info */}

@@ -99,27 +99,37 @@ export default function Login({ onSuccess, onBackToLanding }) {
           {/* Quick Demo Login Preset Buttons */}
           <div className="mb-6 space-y-2">
             <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
-              1-Click Demo Accounts
+              1-Click Demo Accounts (All 3 Roles)
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickLogin('admin@retailpos.com', 'admin123')}
-                className="p-2.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all"
+                onClick={() => handleQuickLogin('owner@retailpos.com', 'owner123')}
+                className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all text-center"
               >
-                <ShieldCheck size={16} />
-                <span>Admin Manager</span>
-                <span className="text-[9px] text-indigo-400 font-mono">admin123</span>
+                <span className="text-sm">👑</span>
+                <span>Owner</span>
+                <span className="text-[9px] text-amber-400/80 font-mono">owner123</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => handleQuickLogin('cashier@retailpos.com', 'cashier123')}
-                className="p-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all"
+                onClick={() => handleQuickLogin('manager@retailpos.com', 'manager123')}
+                className="p-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all text-center"
               >
-                <UserCheck size={16} />
-                <span>Terminal Cashier</span>
-                <span className="text-[9px] text-emerald-400 font-mono">cashier123</span>
+                <span className="text-sm">💼</span>
+                <span>Manager</span>
+                <span className="text-[9px] text-indigo-400/80 font-mono">manager123</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('salesman@retailpos.com', 'salesman123')}
+                className="p-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex flex-col items-center gap-0.5 transition-all text-center"
+              >
+                <span className="text-sm">⚡</span>
+                <span>Salesman</span>
+                <span className="text-[9px] text-emerald-400/80 font-mono">salesman123</span>
               </button>
             </div>
           </div>

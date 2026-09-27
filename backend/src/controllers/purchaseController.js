@@ -36,3 +36,24 @@ export const createPurchase = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const updatePurchase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await db.updatePurchase(id, req.body);
+    res.json({ success: true, message: "Purchase record updated!", data: updated });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deletePurchase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await db.deletePurchase(id);
+    res.json({ success: true, message: "Purchase deleted and inward inventory reversed!", data: deleted });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+

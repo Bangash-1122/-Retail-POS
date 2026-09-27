@@ -21,3 +21,33 @@ export const getUsers = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const createUser = async (req, res) => {
+  try {
+    const user = await db.createUser(req.body);
+    res.status(201).json({ success: true, message: "Staff user created successfully!", data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await db.updateUser(id, req.body);
+    res.json({ success: true, message: "Staff user updated successfully!", data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.deleteUser(id);
+    res.json({ success: true, message: "Staff user removed successfully!" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+

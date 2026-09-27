@@ -52,7 +52,15 @@ function loadLocalStore() {
           localStore.settings.paymentMethods = [...initialSettings.paymentMethods];
         }
       }
-      if (parsed.users && parsed.users.length > 0) localStore.users = parsed.users;
+      if (parsed.users && parsed.users.length > 0) {
+        // Merge initial users if any are missing
+        const userMap = new Map();
+        initialUsers.forEach(u => userMap.set(u.email.toLowerCase(), u));
+        parsed.users.forEach(u => userMap.set(u.email.toLowerCase(), u));
+        localStore.users = Array.from(userMap.values());
+      } else {
+        localStore.users = [...initialUsers];
+      }
       if (parsed.purchases) localStore.purchases = parsed.purchases;
       if (parsed.expenses) localStore.expenses = parsed.expenses;
 
@@ -75,11 +83,27 @@ function loadLocalStore() {
   }
 }
 
+// Atomic file save with backup to prevent data corruption
 function saveLocalStore() {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(localStore, null, 2), 'utf-8');
+    const serialized = JSON.stringify(localStore, null, 2);
+    const tempFile = `${DATA_FILE}.tmp`;
+    const backupFile = `${DATA_FILE}.bak`;
+
+    // Write to temp file first
+    fs.writeFileSync(tempFile, serialized, 'utf-8');
+
+    // Create backup of current file if it exists
+    if (fs.existsSync(DATA_FILE)) {
+      try {
+        fs.copyFileSync(DATA_FILE, backupFile);
+      } catch (e) {}
+    }
+
+    // Atomic rename
+    fs.renameSync(tempFile, DATA_FILE);
   } catch (err) {
-    console.error("Warning: Could not save store.json:", err.message);
+    console.error("Critical Error: Could not save store.json:", err.message);
   }
 }
 
@@ -141,6 +165,75 @@ export const db = {
       return await User.find({}, '-password');
     } else {
       return localStore.users.map(({ password, ...u }) => u);
+    }
+  },
+
+  async createUser(userData) {
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+    if (!cleanEmail || !userData.name || !userData.password) {
+      throw new Error("Name, email, and password are required.");
+    }
+
+    if (isMongoConnected) {
+      const existing = await User.findOne({ email: cleanEmail });
+      if (existing) throw new Error("A user with this email already exists!");
+      const created = await User.create({
+        ...userData,
+        email: cleanEmail,
+        role: userData.role || 'salesman',
+        status: userData.status || 'active',
+        phone: userData.phone || ''
+      });
+      const { password, ...safeUser } = created.toObject();
+      return safeUser;
+    } else {
+      const existing = localStore.users.find(u => u.email.toLowerCase() === cleanEmail);
+      if (existing) throw new Error("A user with this email already exists!");
+      const newUser = {
+        _id: `user_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        name: userData.name.trim(),
+        email: cleanEmail,
+        password: userData.password,
+        role: userData.role || 'salesman',
+        phone: userData.phone || '',
+        status: userData.status || 'active',
+        avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        createdAt: new Date().toISOString()
+      };
+      localStore.users.push(newUser);
+      saveLocalStore();
+      const { password, ...safeUser } = newUser;
+      return safeUser;
+    }
+  },
+
+  async updateUser(id, updateData) {
+    if (isMongoConnected) {
+      const updated = await User.findByIdAndUpdate(id, updateData, { new: true });
+      if (!updated) throw new Error("User not found");
+      const { password, ...safeUser } = updated.toObject();
+      return safeUser;
+    } else {
+      const idx = localStore.users.findIndex(u => u._id === id);
+      if (idx === -1) throw new Error("User not found");
+      localStore.users[idx] = { ...localStore.users[idx], ...updateData };
+      saveLocalStore();
+      const { password, ...safeUser } = localStore.users[idx];
+      return safeUser;
+    }
+  },
+
+  async deleteUser(id) {
+    if (isMongoConnected) {
+      const deleted = await User.findByIdAndDelete(id);
+      if (!deleted) throw new Error("User not found");
+      return { success: true };
+    } else {
+      const idx = localStore.users.findIndex(u => u._id === id);
+      if (idx === -1) throw new Error("User not found");
+      localStore.users.splice(idx, 1);
+      saveLocalStore();
+      return { success: true };
     }
   },
 
@@ -289,7 +382,60 @@ export const db = {
     if (!isMongoConnected) saveLocalStore();
   },
 
+  async createOrder(orderData) {
+    if (isMongoConnected) {
+      const order = await Order.create(orderData);
+      await this.decrementStock(orderData.items);
+      return order;
+    } else {
+      const newOrder = {
+        ...orderData,
+        _id: `ord_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+      };
+      localStore.orders.unshift(newOrder);
+      await this.decrementStock(orderData.items);
+      saveLocalStore();
+      return newOrder;
+    }
+  },
 
+  async updateOrder(id, updateData) {
+    if (isMongoConnected) {
+      const updated = await Order.findByIdAndUpdate(id, updateData, { new: true });
+      if (!updated) throw new Error("Order not found");
+      return updated;
+    } else {
+      const idx = localStore.orders.findIndex(o => o._id === id || o.orderNo === id);
+      if (idx === -1) throw new Error("Order not found");
+      localStore.orders[idx] = { ...localStore.orders[idx], ...updateData };
+      saveLocalStore();
+      return localStore.orders[idx];
+    }
+  },
+
+  async deleteOrder(id) {
+    if (isMongoConnected) {
+      const order = await Order.findById(id);
+      if (!order) throw new Error("Order not found");
+      // Restore inventory stock
+      if (order.items && order.items.length > 0) {
+        await this.incrementStock(order.items);
+      }
+      await Order.findByIdAndDelete(id);
+      return order;
+    } else {
+      const idx = localStore.orders.findIndex(o => o._id === id || o.orderNo === id);
+      if (idx === -1) throw new Error("Order not found");
+      const order = localStore.orders[idx];
+      // Restore inventory stock
+      if (order.items && order.items.length > 0) {
+        await this.incrementStock(order.items);
+      }
+      localStore.orders.splice(idx, 1);
+      saveLocalStore();
+      return order;
+    }
+  },
 
   async getOrders({ limit = 50, search = '' } = {}) {
     if (isMongoConnected) {
@@ -352,6 +498,42 @@ export const db = {
       await this.incrementStock(purchaseData.items);
       saveLocalStore();
       return newPurchase;
+    }
+  },
+
+  async updatePurchase(id, updateData) {
+    if (isMongoConnected) {
+      const updated = await Purchase.findByIdAndUpdate(id, updateData, { new: true });
+      if (!updated) throw new Error("Purchase record not found");
+      return updated;
+    } else {
+      const idx = localStore.purchases.findIndex(p => p._id === id || p.purchaseNo === id);
+      if (idx === -1) throw new Error("Purchase record not found");
+      localStore.purchases[idx] = { ...localStore.purchases[idx], ...updateData };
+      saveLocalStore();
+      return localStore.purchases[idx];
+    }
+  },
+
+  async deletePurchase(id) {
+    if (isMongoConnected) {
+      const p = await Purchase.findById(id);
+      if (!p) throw new Error("Purchase record not found");
+      if (p.items && p.items.length > 0) {
+        await this.decrementStock(p.items);
+      }
+      await Purchase.findByIdAndDelete(id);
+      return p;
+    } else {
+      const idx = localStore.purchases.findIndex(p => p._id === id || p.purchaseNo === id);
+      if (idx === -1) throw new Error("Purchase record not found");
+      const p = localStore.purchases[idx];
+      if (p.items && p.items.length > 0) {
+        await this.decrementStock(p.items);
+      }
+      localStore.purchases.splice(idx, 1);
+      saveLocalStore();
+      return p;
     }
   },
 

@@ -11,7 +11,10 @@ import {
   CheckCircle2, 
   X, 
   RefreshCw,
-  ShoppingBag
+  ShoppingBag,
+  Edit3,
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 import { api } from '../utils/api';
@@ -21,6 +24,21 @@ export default function Purchases() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState('');
+
+  // Modals for View, Edit, Delete
+  const [viewingPurchase, setViewingPurchase] = useState(null);
+  const [editingPurchase, setEditingPurchase] = useState(null);
+  const [editForm, setEditForm] = useState({
+    supplierName: '',
+    supplierPhone: '',
+    paymentStatus: 'paid',
+    notes: ''
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Delete Rollback confirmation
+  const [deletingPurchase, setDeletingPurchase] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // New Purchase Form
   const [supplierName, setSupplierName] = useState('');
@@ -101,12 +119,54 @@ export default function Purchases() {
       setPurchaseItems([{ productId: products[0]?._id || '', qty: 10, costPrice: products[0]?.costPrice || 100 }]);
       
       // Refresh purchases and inventory stock!
-      loadPurchases();
-      loadProducts();
+      await loadPurchases();
+      await loadProducts();
     } catch (err) {
       alert("Failed to record purchase: " + err.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openEditModal = (p) => {
+    setEditingPurchase(p);
+    setEditForm({
+      supplierName: p.supplierName || '',
+      supplierPhone: p.supplierPhone || '',
+      paymentStatus: p.paymentStatus || 'paid',
+      notes: p.notes || ''
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingPurchase) return;
+
+    setSavingEdit(true);
+    try {
+      await api.updatePurchase(editingPurchase._id, editForm);
+      setEditingPurchase(null);
+      await loadPurchases();
+    } catch (err) {
+      alert("Failed to update purchase: " + err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingPurchase) return;
+
+    setIsDeleting(true);
+    try {
+      await api.deletePurchase(deletingPurchase._id);
+      setDeletingPurchase(null);
+      await loadPurchases();
+      await loadProducts(); // Refresh stock counts after rollback
+    } catch (err) {
+      alert("Failed to delete purchase: " + err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -127,7 +187,7 @@ export default function Purchases() {
             Purchases & Inward Stock
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Receive inventory from suppliers and automatically update catalog stock counts.
+            Receive inventory from suppliers, edit shipments, or delete with safe stock rollback.
           </p>
         </div>
 
@@ -174,12 +234,13 @@ export default function Purchases() {
                 <th className="py-3.5 px-4">STOCK ITEMS</th>
                 <th className="py-3.5 px-4">STATUS</th>
                 <th className="py-3.5 px-4 text-right">TOTAL INWARD COST</th>
+                <th className="py-3.5 px-4 text-right">ACTIONS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80">
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-12 text-center text-slate-500">
+                  <td colSpan="7" className="py-12 text-center text-slate-500">
                     <Truck size={32} className="text-slate-600 mx-auto mb-2" />
                     <p className="font-semibold text-slate-300">No stock purchases found</p>
                     <p className="text-xs text-slate-500 mt-0.5">Click 'New Stock Purchase' to record your first supplier shipment.</p>
@@ -199,9 +260,13 @@ export default function Purchases() {
                       {new Date(p.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="text-slate-300">
-                        {p.items?.map(it => `${it.name} (+${it.qty})`).join(', ') || `${p.items?.length || 0} items`}
-                      </div>
+                      <button
+                        onClick={() => setViewingPurchase(p)}
+                        className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-violet-300 font-mono text-[11px] inline-flex items-center gap-1 transition-colors"
+                      >
+                        <Eye size={12} />
+                        <span>{p.items?.length || 0} item(s)</span>
+                      </button>
                     </td>
                     <td className="py-3 px-4">
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -211,6 +276,24 @@ export default function Purchases() {
                     <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
                       {settings.currency} {Number(p.totalAmount || 0).toLocaleString()}
                     </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => openEditModal(p)}
+                          title="Edit Supplier & Status"
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                        <button
+                          onClick={() => setDeletingPurchase(p)}
+                          title="Delete Purchase & Rollback Stock"
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -218,6 +301,200 @@ export default function Purchases() {
           </table>
         </div>
       </div>
+
+      {/* View Purchase Items Breakdown Modal */}
+      {viewingPurchase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#111827] border border-slate-700 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Truck size={18} className="text-violet-400" />
+                <h3 className="font-display font-bold text-white text-base">
+                  Purchase Order: {viewingPurchase.purchaseNo}
+                </h3>
+              </div>
+              <button onClick={() => setViewingPurchase(null)} className="text-slate-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800">
+                <div>
+                  <span className="text-slate-500 text-[10px] uppercase font-bold">Supplier:</span>
+                  <p className="font-semibold text-slate-200">{viewingPurchase.supplierName}</p>
+                </div>
+                {viewingPurchase.supplierPhone && (
+                  <div className="text-right">
+                    <span className="text-slate-500 text-[10px] uppercase font-bold">Phone:</span>
+                    <p className="font-mono text-slate-300">{viewingPurchase.supplierPhone}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="divide-y divide-slate-800">
+                {viewingPurchase.items?.map((it, idx) => (
+                  <div key={idx} className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-200">{it.name}</p>
+                      <p className="text-[11px] text-slate-500 font-mono">
+                        +{it.qty} units received @ {settings.currency} {Number(it.costPrice).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-right font-mono font-bold text-slate-200">
+                      {settings.currency} {Number(it.total || (it.qty * it.costPrice)).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
+                <span className="text-xs text-slate-400 font-medium">Total Purchase Amount:</span>
+                <span className="font-mono font-bold text-emerald-400 text-base">
+                  {settings.currency} {Number(viewingPurchase.totalAmount).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Purchase Modal */}
+      {editingPurchase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#111827] border border-slate-700 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Edit3 size={18} className="text-violet-400" />
+                <h3 className="font-display font-bold text-white text-base">
+                  Edit Purchase: {editingPurchase.purchaseNo}
+                </h3>
+              </div>
+              <button onClick={() => setEditingPurchase(null)} className="text-slate-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 font-medium mb-1">Supplier / Distributor Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.supplierName}
+                  onChange={(e) => setEditForm({ ...editForm, supplierName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-medium mb-1">Supplier Phone</label>
+                <input
+                  type="text"
+                  value={editForm.supplierPhone}
+                  onChange={(e) => setEditForm({ ...editForm, supplierPhone: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-medium mb-1">Payment Status</label>
+                <select
+                  value={editForm.paymentStatus}
+                  onChange={(e) => setEditForm({ ...editForm, paymentStatus: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="paid">Paid (Cleared)</option>
+                  <option value="partial">Partial</option>
+                  <option value="unpaid">Unpaid (Credit)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-medium mb-1">Notes</label>
+                <textarea
+                  rows="2"
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setEditingPurchase(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold flex items-center gap-1.5"
+                >
+                  {savingEdit && <RefreshCw size={13} className="animate-spin" />}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete / Rollback Confirmation Modal */}
+      {deletingPurchase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#111827] border border-rose-500/40 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-rose-500/20 bg-rose-500/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={18} className="text-rose-400" />
+                <h3 className="font-display font-bold text-white text-base">
+                  Delete Purchase & Rollback Stock?
+                </h3>
+              </div>
+              <button onClick={() => setDeletingPurchase(null)} className="text-slate-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <p className="text-slate-300">
+                Are you sure you want to delete purchase <span className="font-mono font-bold text-white">{deletingPurchase.purchaseNo}</span> from <span className="font-semibold text-slate-200">{deletingPurchase.supplierName}</span>?
+              </p>
+
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 space-y-1">
+                <p className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-rose-400" />
+                  Automatic Stock Rollback Safeguard
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  The {deletingPurchase.items?.length || 0} product item(s) received in this order will have their stock deducted back from current inventory to keep counts accurate.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingPurchase(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
+                >
+                  Keep Purchase
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
+                >
+                  {isDeleting && <RefreshCw size={13} className="animate-spin" />}
+                  <span>Confirm Delete & Rollback</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Purchase Modal */}
       {isModalOpen && (

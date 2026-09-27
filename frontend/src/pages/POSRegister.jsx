@@ -21,6 +21,8 @@ export default function POSRegister() {
     loadingProducts, 
     loadProducts, 
     addToCart, 
+    cart,
+    netTotal,
     settings, 
     loadSettings,
     setIsPaymentModalOpen,
@@ -32,6 +34,7 @@ export default function POSRegister() {
   const [barcodeInput, setBarcodeInput] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
+  const [showMobileCart, setShowMobileCart] = useState(false);
   const searchInputRef = useRef(null);
 
   // Available categories from settings
@@ -248,7 +251,7 @@ export default function POSRegister() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5 pb-20 lg:pb-0">
               {filteredProducts.map((product) => (
                 <ProductCard key={product._id || product.barcode} product={product} />
               ))}
@@ -256,12 +259,46 @@ export default function POSRegister() {
           )}
         </div>
 
+        {/* ── Mobile & Tablet Floating Bottom Cart Bar (Visible on < lg) ── */}
+        {cart.length > 0 && (
+          <div className="lg:hidden fixed bottom-4 left-4 right-4 z-30 animate-slide-up">
+            <div 
+              onClick={() => setShowMobileCart(true)}
+              className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-2xl shadow-indigo-600/40 border border-indigo-400/30 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center font-bold text-sm">
+                  {cart.reduce((s, i) => s + i.qty, 0)}
+                </div>
+                <div>
+                  <p className="text-[11px] text-indigo-100 font-medium leading-none">Cart Total</p>
+                  <p className="text-sm font-bold font-mono mt-0.5">{settings.currency} {netTotal.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-indigo-700 font-bold text-xs shadow-sm">
+                <span>View Cart & Pay</span>
+                <span>→</span>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* ── Right Column: Interactive Cart Drawer ── */}
-      <div className="w-80 sm:w-96 flex-shrink-0 h-full">
+      {/* ── Desktop Right Column: Interactive Cart Drawer (Visible on lg+) ── */}
+      <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 h-full">
         <CartDrawer />
       </div>
+
+      {/* ── Mobile / Tablet Slide-over Cart Modal (Visible on < lg when opened) ── */}
+      {showMobileCart && (
+        <div className="lg:hidden fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md h-full bg-[#111827] shadow-2xl flex flex-col animate-slide-left">
+            <CartDrawer onClose={() => setShowMobileCart(false)} />
+          </div>
+        </div>
+      )}
 
     </div>
   );
