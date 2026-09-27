@@ -10,12 +10,19 @@ import {
   Volume2, 
   VolumeX, 
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Truck,
+  DollarSign,
+  Home,
+  LogOut,
+  User,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 
-export default function Navbar({ activeTab, setActiveTab }) {
-  const { cart, netTotal, settings, setSettings } = usePOS();
+export default function Navbar({ activeTab, setActiveTab, onOpenLogin }) {
+  const { cart, netTotal, settings, setSettings, currentUser, logout } = usePOS();
   const [time, setTime] = useState(new Date());
   const [showShortcuts, setShowShortcuts] = useState(false);
 
@@ -31,21 +38,27 @@ export default function Navbar({ activeTab, setActiveTab }) {
   };
 
   const navItems = [
+    { id: 'landing', label: 'Home', icon: Home },
     { id: 'register', label: 'POS Terminal', icon: ShoppingCart, badge: totalItemsCount > 0 ? totalItemsCount : null },
     { id: 'inventory', label: 'Inventory', icon: Package },
-    { id: 'sales', label: 'Sales History', icon: Receipt },
+    { id: 'purchases', label: 'Purchases', icon: Truck },
+    { id: 'expenses', label: 'Expenses', icon: DollarSign },
+    { id: 'sales', label: 'Sales', icon: Receipt },
     { id: 'dashboard', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-[#0F172A]/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+      <header className="sticky top-0 z-40 bg-[#0B0F19]/95 backdrop-blur-md border-b border-slate-800 shadow-xl">
         <div className="max-w-[1920px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between">
           
           {/* Brand Logo & Store Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center shadow-glow text-white font-bold text-lg">
+          <div 
+            onClick={() => setActiveTab('landing')}
+            className="flex items-center gap-3 cursor-pointer select-none group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center shadow-glow text-white font-bold text-lg group-hover:scale-105 transition-transform">
               <Zap size={22} className="animate-pulse-subtle" />
             </div>
             <div>
@@ -55,17 +68,17 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                  Online • 5001
+                  Active
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium truncate max-w-[200px] sm:max-w-xs">
+              <p className="text-xs text-slate-400 font-medium truncate max-w-[180px] sm:max-w-xs">
                 {settings.storeName}
               </p>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-[#1E293B]/70 p-1.5 rounded-2xl border border-slate-800">
+          <nav className="hidden xl:flex items-center gap-1 bg-[#131B2E]/90 p-1.5 rounded-2xl border border-slate-800/80">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -73,16 +86,16 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`relative flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                  className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     isActive
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
                 >
-                  <Icon size={15} />
+                  <Icon size={14} />
                   <span>{item.label}</span>
                   {item.badge !== null && (
-                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white text-indigo-700 font-bold">
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full text-[9px] bg-white text-indigo-700 font-bold">
                       {item.badge}
                     </span>
                   )}
@@ -91,8 +104,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
             })}
           </nav>
 
-          {/* Right Action Widgets (Sound, Time, Shortcuts, Quick Cart Total) */}
-          <div className="flex items-center gap-3">
+          {/* Right Action Widgets (Sound, Time, Shortcuts, User Profile) */}
+          <div className="flex items-center gap-2.5">
             
             {/* Sound Toggle */}
             <button
@@ -116,13 +129,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
               <HelpCircle size={16} />
             </button>
 
-            {/* Real-time Clock */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1E293B]/60 border border-slate-800 text-slate-300 text-xs font-mono">
-              <Clock size={13} className="text-indigo-400" />
-              <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-            </div>
-
-            {/* Top Quick Register Total Pill */}
+            {/* Quick Cart Pill */}
             {activeTab !== 'register' && (
               <button
                 onClick={() => setActiveTab('register')}
@@ -132,11 +139,49 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 <span>{settings.currency} {netTotal.toLocaleString()}</span>
               </button>
             )}
+
+            {/* User Profile / Auth State */}
+            {currentUser ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+                <div className="w-8 h-8 rounded-xl bg-slate-800 overflow-hidden border border-slate-700">
+                  {currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs font-bold text-indigo-400">
+                      {currentUser.name[0]}
+                    </div>
+                  )}
+                </div>
+                <div className="hidden lg:block text-left">
+                  <p className="text-xs font-semibold text-slate-200 leading-tight">
+                    {currentUser.name.split(' ')[0]}
+                  </p>
+                  <span className="text-[10px] text-indigo-400 font-mono capitalize">
+                    {currentUser.role}
+                  </span>
+                </div>
+                <button
+                  onClick={logout}
+                  title="Sign Out"
+                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ml-1"
+                >
+                  <LogOut size={15} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenLogin}
+                className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
+              >
+                Sign In
+              </button>
+            )}
+
           </div>
         </div>
 
-        {/* Mobile Submenu */}
-        <div className="md:hidden flex overflow-x-auto border-t border-slate-800/80 px-2 py-1 gap-1">
+        {/* Mobile / Tablet Horizontal Scroll Menu */}
+        <div className="xl:hidden flex overflow-x-auto border-t border-slate-800/80 px-2 py-1 gap-1 no-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -150,7 +195,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                     : 'text-slate-400 hover:bg-slate-800'
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={13} />
                 <span>{item.label}</span>
                 {item.badge !== null && (
                   <span className="px-1 rounded-full text-[9px] bg-white text-indigo-700 font-bold">
@@ -191,10 +236,6 @@ export default function Navbar({ activeTab, setActiveTab }) {
               <div className="flex items-center justify-between py-1.5 border-b border-slate-800/60">
                 <span>Clear Current Cart</span>
                 <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-indigo-300 font-mono">Esc</kbd>
-              </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/60">
-                <span>Simulate / Scan Barcode</span>
-                <span className="text-slate-400">Scanner hardware sends 'Enter' automatically</span>
               </div>
             </div>
             <button

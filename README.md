@@ -20,31 +20,7 @@ A modern, high-performance **Retail Point of Sale (POS) & Inventory Management S
 - **100% Universal Compatibility:** Works seamlessly with **USB, Wi-Fi/Network, and Bluetooth** thermal printers (Epson, Xprinter, Rongta, Star Micronics, Sunmi, generic Chinese printers).
 - **Dual Paper Roll Support:** 1-click switcher between **80mm (3-inch Standard POS)** and **58mm (2-inch Mini POS)**.
 - **Formatted Receipts:** Includes store branding, address, phone, NTN/Tax ID, order #, date/time, cashier name, itemized pricing, change due, and barcode visual footer.
-- **0-Click Kiosk Silent Printing:** Bypass browser print confirmation dialogues for instant 0.5-second paper output.
 
-### 3. 📦 Inventory & Stock Management
-- Complete product catalog with real-time stock counts.
-- **Automatic Stock Decrement:** Stock is automatically deducted when an order is completed.
-- **Low Stock Alerts:** Visual warning banners and pulsing badges when inventory falls below minimum threshold.
-- Add, Edit, and Delete products with barcode, category, cost price, sale price, and image URLs.
-
-### 4. 📜 Sales History & Invoice Reprinting
-- Complete searchable ledger of past customer orders and invoices.
-- **1-Click Reprint:** Instant thermal receipt reprinting for any previous order.
-
-### 5. 📊 Real-Time Analytics & Dashboard
-- Today's Revenue and Order Volume KPI cards.
-- Lifetime sales and average basket sizes.
-- Top 5 best-selling products leaderboard.
-- Payment method breakdown (*Cash vs Card vs Mobile Wallet*).
-
-### 6. ⚙️ Store & Hardware Settings
-- Custom store name, tagline, address, phone, and NTN.
-- Configurable default tax rate (GST/VAT) and currency symbol (`Rs.`, `$`, `€`).
-- Default thermal paper width preference (`80mm` vs `58mm`).
-- Barcode scanner audio toggle and custom receipt return policy text.
-
----
 
 ## 🚀 Tech Stack
 

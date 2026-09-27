@@ -17,6 +17,10 @@ async function request(url, options = {}) {
 }
 
 export const api = {
+  // Auth
+  login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  getUsers: () => request('/auth/users'),
+
   // Products
   getProducts: (params = {}) => {
     const query = new URLSearchParams(params).toString();
@@ -34,6 +38,18 @@ export const api = {
     return request(`/orders${query ? `?${query}` : ''}`);
   },
   getOrderById: (id) => request(`/orders/${id}`),
+
+  // Purchases (Stock In)
+  getPurchases: () => request('/purchases'),
+  createPurchase: (data) => request('/purchases', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Expenses
+  getExpenses: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request(`/expenses${query ? `?${query}` : ''}`);
+  },
+  createExpense: (data) => request('/expenses', { method: 'POST', body: JSON.stringify(data) }),
+  deleteExpense: (id) => request(`/expenses/${id}`, { method: 'DELETE' }),
 
   // Analytics
   getAnalytics: () => request('/analytics'),

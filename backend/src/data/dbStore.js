@@ -2,10 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
-import { initialProducts, initialSettings } from './seedProducts.js';
+import { initialProducts, initialSettings, initialUsers, initialPurchases, initialExpenses } from './seedProducts.js';
 import { Product } from '../models/Product.js';
 import { Order } from '../models/Order.js';
 import { Setting } from '../models/Setting.js';
+import { User } from '../models/User.js';
+import { Purchase } from '../models/Purchase.js';
+import { Expense } from '../models/Expense.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +21,10 @@ let isMongoConnected = false;
 let localStore = {
   products: [...initialProducts.map((p, idx) => ({ ...p, _id: `prod_${Date.now()}_${idx}`, createdAt: new Date().toISOString() }))],
   orders: [],
-  settings: { ...initialSettings }
+  settings: { ...initialSettings },
+  users: [...initialUsers],
+  purchases: [...initialPurchases],
+  expenses: [...initialExpenses]
 };
 
 // Ensure data folder exists
@@ -32,15 +38,12 @@ function loadLocalStore() {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, 'utf-8');
       const parsed = JSON.parse(content);
-      if (parsed.products && parsed.products.length > 0) {
-        localStore.products = parsed.products;
-      }
-      if (parsed.orders) {
-        localStore.orders = parsed.orders;
-      }
-      if (parsed.settings) {
-        localStore.settings = { ...initialSettings, ...parsed.settings };
-      }
+      if (parsed.products && parsed.products.length > 0) localStore.products = parsed.products;
+      if (parsed.orders) localStore.orders = parsed.orders;
+      if (parsed.settings) localStore.settings = { ...initialSettings, ...parsed.settings };
+      if (parsed.users && parsed.users.length > 0) localStore.users = parsed.users;
+      if (parsed.purchases) localStore.purchases = parsed.purchases;
+      if (parsed.expenses) localStore.expenses = parsed.expenses;
     } else {
       saveLocalStore();
     }
@@ -77,24 +80,52 @@ export async function initDatabase() {
     const settingCount = await Setting.countDocuments();
     if (settingCount === 0) {
       await Setting.create(initialSettings);
-      console.log("Seeded initial settings into MongoDB.");
+    }
+
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      await User.insertMany(initialUsers);
     }
   } catch (err) {
     isMongoConnected = false;
-    console.log("MongoDB is not running locally. Using persistent JSON database storage (data/store.json). Everything works smoothly!");
+    console.log("Using persistent JSON database storage (data/store.json). Everything works smoothly!");
   }
 }
 
 export const db = {
   isUsingMongo: () => isMongoConnected,
 
-  // Products
+  // ── Authentication & Users ──
+  async loginUser({ email, password }) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (isMongoConnected) {
+      const user = await User.findOne({ email: cleanEmail });
+      if (!user || user.password !== password) {
+        throw new Error("Invalid email or password");
+      }
+      return { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar };
+    } else {
+      const user = localStore.users.find(u => u.email.toLowerCase() === cleanEmail && u.password === password);
+      if (!user) {
+        throw new Error("Invalid email or password. Use demo login or credentials.");
+      }
+      return { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar };
+    }
+  },
+
+  async getUsers() {
+    if (isMongoConnected) {
+      return await User.find({}, '-password');
+    } else {
+      return localStore.users.map(({ password, ...u }) => u);
+    }
+  },
+
+  // ── Products ──
   async getProducts({ search = '', category = '', lowStock = false }) {
     if (isMongoConnected) {
       const query = {};
-      if (category && category !== 'All') {
-        query.category = category;
-      }
+      if (category && category !== 'All') query.category = category;
       if (search) {
         query.$or = [
           { name: { $regex: search, $options: 'i' } },
@@ -138,9 +169,7 @@ export const db = {
       return await Product.create(data);
     } else {
       const exists = localStore.products.find(p => p.barcode === data.barcode);
-      if (exists) {
-        throw new Error(`Product with barcode "${data.barcode}" already exists.`);
-      }
+      if (exists) throw new Error(`Product with barcode "${data.barcode}" already exists.`);
       const newProduct = {
         ...data,
         _id: `prod_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -181,7 +210,7 @@ export const db = {
     }
   },
 
-  // Decrement inventory when sale completed
+  // Stock operations
   async decrementStock(items) {
     for (const item of items) {
       const qty = Number(item.qty) || 1;
@@ -197,12 +226,28 @@ export const db = {
         }
       }
     }
-    if (!isMongoConnected) {
-      saveLocalStore();
-    }
+    if (!isMongoConnected) saveLocalStore();
   },
 
-  // Orders
+  async incrementStock(items) {
+    for (const item of items) {
+      const qty = Number(item.qty) || 1;
+      if (isMongoConnected) {
+        await Product.findOneAndUpdate(
+          { $or: [{ _id: item.productId }, { barcode: item.barcode }] },
+          { $inc: { stock: qty } }
+        );
+      } else {
+        const prod = localStore.products.find(p => p._id === item.productId || p.barcode === item.barcode);
+        if (prod) {
+          prod.stock += qty;
+        }
+      }
+    }
+    if (!isMongoConnected) saveLocalStore();
+  },
+
+  // ── Orders (Sales) ──
   async createOrder(orderData) {
     if (isMongoConnected) {
       const order = await Order.create(orderData);
@@ -252,7 +297,83 @@ export const db = {
     }
   },
 
-  // Settings
+  // ── Purchases (Stock In / Suppliers) ──
+  async getPurchases() {
+    if (isMongoConnected) {
+      return await Purchase.find().sort({ createdAt: -1 });
+    } else {
+      return localStore.purchases || [];
+    }
+  },
+
+  async createPurchase(purchaseData) {
+    const purchaseNo = `PO-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const fullData = {
+      ...purchaseData,
+      purchaseNo,
+      createdAt: new Date().toISOString()
+    };
+
+    if (isMongoConnected) {
+      const purchase = await Purchase.create(fullData);
+      await this.incrementStock(purchaseData.items);
+      return purchase;
+    } else {
+      const newPurchase = {
+        ...fullData,
+        _id: `pur_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+      };
+      localStore.purchases.unshift(newPurchase);
+      await this.incrementStock(purchaseData.items);
+      saveLocalStore();
+      return newPurchase;
+    }
+  },
+
+  // ── Expenses ──
+  async getExpenses({ category = '' } = {}) {
+    if (isMongoConnected) {
+      const query = {};
+      if (category && category !== 'All') query.category = category;
+      return await Expense.find(query).sort({ date: -1 });
+    } else {
+      let list = localStore.expenses || [];
+      if (category && category !== 'All') {
+        list = list.filter(e => e.category === category);
+      }
+      return list;
+    }
+  },
+
+  async createExpense(data) {
+    if (isMongoConnected) {
+      return await Expense.create(data);
+    } else {
+      const newExpense = {
+        ...data,
+        _id: `exp_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        date: data.date || new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+      localStore.expenses.unshift(newExpense);
+      saveLocalStore();
+      return newExpense;
+    }
+  },
+
+  async deleteExpense(id) {
+    if (isMongoConnected) {
+      return await Expense.findByIdAndDelete(id);
+    } else {
+      const index = localStore.expenses.findIndex(e => e._id === id);
+      if (index === -1) throw new Error("Expense not found");
+      const deleted = localStore.expenses.splice(index, 1)[0];
+      saveLocalStore();
+      return deleted;
+    }
+  },
+
+  // ── Settings ──
   async getSettings() {
     if (isMongoConnected) {
       let s = await Setting.findOne();
@@ -266,11 +387,8 @@ export const db = {
   async updateSettings(data) {
     if (isMongoConnected) {
       let s = await Setting.findOne();
-      if (!s) {
-        return await Setting.create(data);
-      } else {
-        return await Setting.findByIdAndUpdate(s._id, data, { new: true });
-      }
+      if (!s) return await Setting.create(data);
+      return await Setting.findByIdAndUpdate(s._id, data, { new: true });
     } else {
       localStore.settings = { ...localStore.settings, ...data };
       saveLocalStore();
@@ -278,28 +396,48 @@ export const db = {
     }
   },
 
-  // Analytics
+  // ── Advanced Analytics (Profit & Loss, COGS, Expenses) ──
   async getAnalytics() {
     let orders = [];
     let products = [];
+    let expenses = [];
+    let purchases = [];
+
     if (isMongoConnected) {
       orders = await Order.find();
       products = await Product.find();
+      expenses = await Expense.find();
+      purchases = await Purchase.find();
     } else {
-      orders = localStore.orders;
-      products = localStore.products;
+      orders = localStore.orders || [];
+      products = localStore.products || [];
+      expenses = localStore.expenses || [];
+      purchases = localStore.purchases || [];
     }
 
     const totalSales = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-    const totalOrders = orders.length;
+    const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const totalPurchases = purchases.reduce((sum, p) => sum + (Number(p.totalAmount) || 0), 0);
 
-    // Today's orders
-    const today = new Date().toISOString().slice(0, 10);
-    const todayOrders = orders.filter(o => {
-      const orderDate = new Date(o.createdAt).toISOString().slice(0, 10);
-      return orderDate === today;
+    // Calculate Cost of Goods Sold (COGS) based on sold items
+    let cogs = 0;
+    orders.forEach(o => {
+      (o.items || []).forEach(it => {
+        const prod = products.find(p => p._id === it.productId || p.barcode === it.barcode);
+        const unitCost = prod ? Number(prod.costPrice || 0) : 0;
+        cogs += unitCost * it.qty;
+      });
     });
+
+    const grossProfit = totalSales - cogs;
+    const netProfit = grossProfit - totalExpenses;
+
+    // Today's orders & expenses
+    const today = new Date().toISOString().slice(0, 10);
+    const todayOrders = orders.filter(o => new Date(o.createdAt).toISOString().slice(0, 10) === today);
     const todaySales = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const todayExpenses = expenses.filter(e => new Date(e.date).toISOString().slice(0, 10) === today)
+                                  .reduce((sum, e) => sum + Number(e.amount), 0);
 
     // Low stock items count
     const lowStockCount = products.filter(p => p.stock <= p.minStock).length;
@@ -326,15 +464,28 @@ export const db = {
       mobile_wallet: orders.filter(o => o.paymentMethod === 'mobile_wallet').length,
     };
 
+    // Category wise expenses
+    const expenseByCategory = {};
+    expenses.forEach(e => {
+      expenseByCategory[e.category] = (expenseByCategory[e.category] || 0) + Number(e.amount);
+    });
+
     return {
       todaySales,
       todayOrdersCount: todayOrders.length,
+      todayExpenses,
       totalSales,
-      totalOrders,
+      totalOrders: orders.length,
       totalProducts: products.length,
+      totalExpenses,
+      totalPurchases,
+      cogs,
+      grossProfit,
+      netProfit,
       lowStockCount,
       topProducts,
       paymentBreakdown,
+      expenseByCategory,
       recentOrders: orders.slice(0, 5)
     };
   }

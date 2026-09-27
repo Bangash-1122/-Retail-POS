@@ -6,19 +6,25 @@ import productRoutes from './src/routes/productRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
 import settingRoutes from './src/routes/settingRoutes.js';
 import analyticsRoutes from './src/routes/analyticsRoutes.js';
+import authRoutes from './src/routes/authRoutes.js';
+import purchaseRoutes from './src/routes/purchaseRoutes.js';
+import expenseRoutes from './src/routes/expenseRoutes.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/purchases', purchaseRoutes);
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/analytics', analyticsRoutes);
 

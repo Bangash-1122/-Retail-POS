@@ -9,13 +9,16 @@ import {
   Smartphone,
   RefreshCw,
   Award,
-  ArrowUpRight
+  DollarSign,
+  ArrowUpRight,
+  TrendingDown,
+  PieChart
 } from 'lucide-react';
 import { api } from '../utils/api';
 import { usePOS } from '../context/POSContext';
 
 export default function Dashboard() {
-  const { settings, setActiveReceipt, setIsReceiptModalOpen } = usePOS();
+  const { settings } = usePOS();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,43 +42,47 @@ export default function Dashboard() {
     return (
       <div className="flex-1 flex items-center justify-center text-slate-400 gap-3">
         <RefreshCw size={24} className="animate-spin text-indigo-500" />
-        <span className="text-xs">Loading sales reports...</span>
+        <span className="text-xs">Loading financial reports...</span>
       </div>
     );
   }
 
+  const netProfit = (stats?.netProfit !== undefined) 
+    ? stats.netProfit 
+    : (stats?.totalSales || 0) - (stats?.cogs || 0) - (stats?.totalExpenses || 0);
+
   const kpis = [
     {
-      title: "Today's Revenue",
-      value: `${settings.currency} ${(stats?.todaySales || 0).toLocaleString()}`,
-      sub: `${stats?.todayOrdersCount || 0} orders processed today`,
+      title: "Total Gross Revenue",
+      value: `${settings.currency} ${(stats?.totalSales || 0).toLocaleString()}`,
+      sub: `Today: ${settings.currency} ${(stats?.todaySales || 0).toLocaleString()} (${stats?.todayOrdersCount || 0} orders)`,
       icon: TrendingUp,
       color: "from-emerald-500 to-teal-500",
       textColor: "text-emerald-400"
     },
     {
-      title: "Total Lifetime Sales",
-      value: `${settings.currency} ${(stats?.totalSales || 0).toLocaleString()}`,
-      sub: `${stats?.totalOrders || 0} lifetime customer invoices`,
-      icon: ShoppingBag,
+      title: "Cost of Goods Sold (COGS)",
+      value: `${settings.currency} ${(stats?.cogs || 0).toLocaleString()}`,
+      sub: `Direct wholesale purchase cost of sold units`,
+      icon: Package,
       color: "from-indigo-500 to-violet-500",
       textColor: "text-indigo-400"
     },
     {
-      title: "Active Inventory Items",
-      value: stats?.totalProducts || 0,
-      sub: "SKUs tracked in store catalog",
-      icon: Package,
-      color: "from-blue-500 to-cyan-500",
-      textColor: "text-cyan-400"
+      title: "Operating Expenses",
+      value: `${settings.currency} ${(stats?.totalExpenses || 0).toLocaleString()}`,
+      sub: `Store bills, salaries, tea & overheads`,
+      icon: DollarSign,
+      color: "from-amber-500 to-orange-500",
+      textColor: "text-amber-400"
     },
     {
-      title: "Low Stock Warnings",
-      value: stats?.lowStockCount || 0,
-      sub: "Products needing replenishment",
-      icon: AlertTriangle,
-      color: stats?.lowStockCount > 0 ? "from-amber-500 to-orange-500" : "from-slate-700 to-slate-800",
-      textColor: stats?.lowStockCount > 0 ? "text-amber-400" : "text-slate-400"
+      title: "True Net Profit (Bottom Line)",
+      value: `${settings.currency} ${netProfit.toLocaleString()}`,
+      sub: `Revenue - COGS - Store Expenses`,
+      icon: netProfit >= 0 ? TrendingUp : TrendingDown,
+      color: netProfit >= 0 ? "from-emerald-500 to-cyan-500" : "from-rose-500 to-red-600",
+      textColor: netProfit >= 0 ? "text-emerald-400 font-black" : "text-rose-400 font-black"
     },
   ];
 
@@ -86,10 +93,10 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display font-extrabold text-2xl text-white tracking-tight">
-            Sales & Store Analytics
+            Store Performance & Financials
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time business performance metrics, revenue tracking, and stock monitoring.
+            Real-time profit & loss, COGS margins, expense distribution, and sales analytics.
           </p>
         </div>
 
@@ -102,7 +109,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {/* Primary KPI Row: Revenue, COGS, Expenses, Net Profit */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((k, i) => {
           const Icon = k.icon;
@@ -132,10 +139,11 @@ export default function Dashboard() {
         })}
       </div>
 
+      {/* Grid: Top Sellers, Expenses by Category, Payment Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Top 5 Selling Products */}
-        <div className="lg:col-span-2 p-5 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl">
+        <div className="p-5 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
               <Award size={18} className="text-amber-400" />
@@ -173,18 +181,46 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Expenses by Category */}
+        <div className="p-5 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <PieChart size={18} className="text-rose-400" />
+              <h3 className="font-display font-bold text-white text-sm">Expense Outflow</h3>
+            </div>
+            <span className="text-xs text-slate-500 font-mono">By Category</span>
+          </div>
+
+          {!stats?.expenseByCategory || Object.keys(stats.expenseByCategory).length === 0 ? (
+            <div className="py-12 text-center text-slate-500 text-xs">
+              No store expenses recorded.
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {Object.entries(stats.expenseByCategory).map(([cat, amt]) => (
+                <div key={cat} className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-300 font-medium">{cat}</span>
+                  <span className="text-xs font-mono font-bold text-rose-400">
+                    - {settings.currency} {amt.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Payment Methods Breakdown */}
         <div className="p-5 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl flex flex-col justify-between">
           <div>
             <h3 className="font-display font-bold text-white text-sm mb-4 pb-3 border-b border-slate-800">
-              Payment Methods
+              Payment Channels
             </h3>
 
             <div className="space-y-3">
               <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Banknote size={18} className="text-emerald-400" />
-                  <span className="text-xs font-semibold text-slate-200">Cash</span>
+                  <span className="text-xs font-semibold text-slate-200">Cash Register</span>
                 </div>
                 <span className="font-mono font-bold text-emerald-400 text-sm">
                   {stats?.paymentBreakdown?.cash || 0} orders
@@ -213,9 +249,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-            <span className="text-[11px] text-slate-400 block mb-1">Total Processed Transactions</span>
-            <span className="font-mono text-xl font-black text-white">
+          <div className="mt-6 p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+            <span className="text-slate-400">Total Customer Invoices:</span>
+            <span className="font-mono font-bold text-white text-base">
               {stats?.totalOrders || 0}
             </span>
           </div>

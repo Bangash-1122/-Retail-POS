@@ -5,8 +5,25 @@ import { playBeep, playSuccessSound } from '../utils/sound';
 const POSContext = createContext();
 
 export function POSProvider({ children }) {
+  // Current logged in user (Admin by default or from localStorage)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('retail_pos_user');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      _id: "user_admin_01",
+      name: "Muhammad Ubaid",
+      email: "admin@retailpos.com",
+      role: "admin",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+    };
+  });
+
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [purchases, setPurchases] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [cart, setCart] = useState([]);
   const [discount, setDiscount] = useState(0);
   const [applyTax, setApplyTax] = useState(false);
@@ -31,6 +48,19 @@ export function POSProvider({ children }) {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [activeReceipt, setActiveReceipt] = useState(null);
 
+  // Auth operations
+  const login = async (email, password) => {
+    const res = await api.login({ email, password });
+    setCurrentUser(res.data);
+    localStorage.setItem('retail_pos_user', JSON.stringify(res.data));
+    return res.data;
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('retail_pos_user');
+  };
+
   // Load Settings
   const loadSettings = useCallback(async () => {
     try {
@@ -54,10 +84,32 @@ export function POSProvider({ children }) {
     }
   }, []);
 
+  // Load Purchases
+  const loadPurchases = useCallback(async () => {
+    try {
+      const res = await api.getPurchases();
+      setPurchases(res.data || []);
+    } catch (err) {
+      console.warn("Could not fetch purchases:", err);
+    }
+  }, []);
+
+  // Load Expenses
+  const loadExpenses = useCallback(async (params = {}) => {
+    try {
+      const res = await api.getExpenses(params);
+      setExpenses(res.data || []);
+    } catch (err) {
+      console.warn("Could not fetch expenses:", err);
+    }
+  }, []);
+
   useEffect(() => {
     loadSettings();
     loadProducts();
-  }, [loadSettings, loadProducts]);
+    loadPurchases();
+    loadExpenses();
+  }, [loadSettings, loadProducts, loadPurchases, loadExpenses]);
 
   // Cart Operations
   const addToCart = (product, qty = 1) => {
@@ -151,9 +203,17 @@ export function POSProvider({ children }) {
   return (
     <POSContext.Provider
       value={{
+        currentUser,
+        setCurrentUser,
+        login,
+        logout,
         products,
         loadingProducts,
         loadProducts,
+        purchases,
+        loadPurchases,
+        expenses,
+        loadExpenses,
         cart,
         addToCart,
         updateCartQty,

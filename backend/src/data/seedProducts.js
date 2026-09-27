@@ -135,7 +135,7 @@ export const initialProducts = [
     category: "Personal Care",
     price: 160,
     costPrice: 130,
-    stock: 4, // low stock for alert testing
+    stock: 4,
     minStock: 10,
     image: "https://images.unsplash.com/photo-1607006311028-d897519bb5a1?w=300&auto=format&fit=crop&q=60"
   },
@@ -145,7 +145,7 @@ export const initialProducts = [
     category: "Beverages",
     price: 450,
     costPrice: 380,
-    stock: 3, // low stock
+    stock: 3,
     minStock: 12,
     image: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=300&auto=format&fit=crop&q=60"
   }
@@ -159,9 +159,80 @@ export const initialSettings = {
   phone: "+92 300 9876543",
   ntn: "TRN-9843210-9",
   currency: "Rs.",
-  taxRate: 5, // 5% default tax
-  paperWidth: "80mm", // '80mm' | '58mm'
+  taxRate: 5,
+  paperWidth: "80mm",
   receiptFooter: "Goods once sold can be exchanged within 3 days with receipt.\nThank you for shopping with us!",
   enableBeep: true,
   autoPrintReceipt: true
 };
+
+export const initialUsers = [
+  {
+    _id: "user_admin_01",
+    name: "Muhammad Ubaid",
+    email: "admin@retailpos.com",
+    password: "admin123",
+    role: "admin",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    _id: "user_cashier_01",
+    name: "Ali Raza (Terminal Cashier)",
+    email: "cashier@retailpos.com",
+    password: "cashier123",
+    role: "cashier",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+  }
+];
+
+export const initialPurchases = [
+  {
+    _id: "pur_01",
+    purchaseNo: "PO-2609-1001",
+    supplierName: "Al-Rehman Foods & FMCG Distributors",
+    supplierPhone: "0321-4567890",
+    totalAmount: 42500,
+    paymentStatus: "paid",
+    paidAmount: 42500,
+    notes: "Monthly stock shipment of tea and dry provisions",
+    createdBy: "Muhammad Ubaid",
+    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+    items: [
+      { productId: "prod_01", barcode: "8964000101", name: "Lipton Yellow Label Tea 400g", costPrice: 590, qty: 50, total: 29500 },
+      { productId: "prod_02", barcode: "8964000102", name: "Olper's Full Cream Milk 1 Litre", costPrice: 260, qty: 50, total: 13000 }
+    ]
+  }
+];
+
+export const initialExpenses = [
+  {
+    _id: "exp_01",
+    title: "Store Electricity Bill (Commercial Tariff)",
+    category: "Utilities",
+    amount: 14200,
+    paymentMethod: "bank",
+    date: new Date(Date.now() - 2 * 86400000).toISOString(),
+    notes: "Paid via Online Banking to LESCO",
+    recordedBy: "Muhammad Ubaid"
+  },
+  {
+    _id: "exp_02",
+    title: "Daily Staff Refreshments & Tea",
+    category: "Refreshment & Tea",
+    amount: 650,
+    paymentMethod: "cash",
+    date: new Date(Date.now() - 1 * 86400000).toISOString(),
+    notes: "Evening tea and snacks for POS counter staff",
+    recordedBy: "Ali Raza"
+  },
+  {
+    _id: "exp_03",
+    title: "Thermal Receipt Rolls 80mm (Box of 50 Rolls)",
+    category: "Packaging",
+    amount: 3200,
+    paymentMethod: "cash",
+    date: new Date().toISOString(),
+    notes: "High quality thermal paper rolls for POS printers",
+    recordedBy: "Muhammad Ubaid"
+  }
+];
