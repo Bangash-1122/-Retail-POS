@@ -4,7 +4,9 @@ import {
   Printer, 
   CheckCircle2, 
   ArrowRight, 
-  Info
+  Settings2, 
+  Info,
+  Maximize2
 } from 'lucide-react';
 import { usePOS } from '../../context/POSContext';
 import ThermalReceipt from './ThermalReceipt';
@@ -30,29 +32,29 @@ export default function ReceiptModal() {
   return (
     <>
       {/* ── Screen Modal UI ── */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A1214]/85 backdrop-blur-md animate-fade-in">
-        <div className="bg-[#0A1214] border border-[#32383B] rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+        <div className="bg-[#111827] border border-slate-700/80 rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
           
           {/* Header */}
-          <div className="px-6 py-4 border-b border-[#32383B] bg-[#32383B]/50 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#0A1214] text-[#EDF1F2] border border-[#32383B] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
                 <CheckCircle2 size={18} />
               </div>
               <div>
-                <h3 className="font-display font-bold text-[#EDF1F2] text-base">Receipt Ready</h3>
-                <p className="text-xs text-[#B2BEC2]">Invoice: <span className="text-[#EDF1F2] font-mono font-bold">{activeReceipt.orderNo}</span></p>
+                <h3 className="font-display font-bold text-white text-base">Receipt Ready</h3>
+                <p className="text-xs text-slate-400">Invoice: <span className="text-indigo-400 font-mono">{activeReceipt.orderNo}</span></p>
               </div>
             </div>
 
             {/* Paper Width Toggle */}
-            <div className="flex items-center gap-1 bg-[#0A1214] p-1 rounded-xl border border-[#32383B] text-xs">
+            <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs">
               <button
                 onClick={() => setPreviewWidth('80mm')}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
                   previewWidth === '80mm'
-                    ? 'bg-[#EDF1F2] text-[#0A1214] font-bold shadow-sm'
-                    : 'text-[#B2BEC2] hover:text-[#0A1214] hover:bg-[#CBD3D6]'
+                    ? 'bg-indigo-600 text-white font-bold'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 80mm (Standard)
@@ -61,8 +63,8 @@ export default function ReceiptModal() {
                 onClick={() => setPreviewWidth('58mm')}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-colors ${
                   previewWidth === '58mm'
-                    ? 'bg-[#EDF1F2] text-[#0A1214] font-bold shadow-sm'
-                    : 'text-[#B2BEC2] hover:text-[#0A1214] hover:bg-[#CBD3D6]'
+                    ? 'bg-indigo-600 text-white font-bold'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 58mm (Mini)
@@ -71,14 +73,14 @@ export default function ReceiptModal() {
 
             <button
               onClick={() => setIsReceiptModalOpen(false)}
-              className="w-8 h-8 rounded-xl bg-[#32383B] hover:bg-[#CBD3D6] text-[#B2BEC2] hover:text-[#0A1214] flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
             >
               <X size={16} />
             </button>
           </div>
 
           {/* Thermal Receipt Visual Preview Box */}
-          <div className="flex-1 overflow-y-auto p-6 bg-[#0A1214] flex flex-col items-center">
+          <div className="flex-1 overflow-y-auto p-6 bg-[#0B0F19] flex flex-col items-center">
             
             {/* Paper Simulation Card */}
             <div 
@@ -102,7 +104,7 @@ export default function ReceiptModal() {
               <div className="text-[10px] space-y-0.5">
                 <div className="flex justify-between">
                   <span><strong>INV:</strong> {activeReceipt.orderNo}</span>
-                  <span>{activeReceipt.paymentMethod ? activeReceipt.paymentMethod.toUpperCase() : 'CASH'}</span>
+                  <span>{activeReceipt.paymentMethod?.toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{new Date(activeReceipt.createdAt || Date.now()).toLocaleDateString()}</span>
@@ -147,31 +149,31 @@ export default function ReceiptModal() {
               <div className="space-y-0.5 text-[10px]">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>{settings.currency} {activeReceipt.subtotal ? activeReceipt.subtotal.toLocaleString() : 0}</span>
+                  <span>{settings.currency} {activeReceipt.subtotal?.toLocaleString()}</span>
                 </div>
                 {activeReceipt.discount > 0 && (
                   <div className="flex justify-between">
                     <span>Discount:</span>
-                    <span>- {settings.currency} {activeReceipt.discount.toLocaleString()}</span>
+                    <span>- {settings.currency} {activeReceipt.discount?.toLocaleString()}</span>
                   </div>
                 )}
                 {activeReceipt.tax > 0 && (
                   <div className="flex justify-between">
                     <span>Tax (GST):</span>
-                    <span>+ {settings.currency} {activeReceipt.tax.toLocaleString()}</span>
+                    <span>+ {settings.currency} {activeReceipt.tax?.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-black text-xs border-y border-black py-1 my-1">
                   <span>NET TOTAL:</span>
-                  <span>{settings.currency} {activeReceipt.total ? activeReceipt.total.toLocaleString() : 0}</span>
+                  <span>{settings.currency} {activeReceipt.total?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tendered ({activeReceipt.paymentMethod || 'Cash'}):</span>
-                  <span>{settings.currency} {activeReceipt.paidAmount ? activeReceipt.paidAmount.toLocaleString() : 0}</span>
+                  <span>Tendered ({activeReceipt.paymentMethod}):</span>
+                  <span>{settings.currency} {activeReceipt.paidAmount?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-bold">
                   <span>Change:</span>
-                  <span>{settings.currency} {activeReceipt.change ? activeReceipt.change.toLocaleString() : 0}</span>
+                  <span>{settings.currency} {activeReceipt.change?.toLocaleString() || 0}</span>
                 </div>
               </div>
 
@@ -196,20 +198,20 @@ export default function ReceiptModal() {
             </div>
 
             {/* Silent Printing Tip */}
-            <div className="mt-4 p-3 rounded-2xl bg-[#32383B]/70 border border-[#32383B] max-w-sm text-xs text-[#EDF1F2] flex items-start gap-2">
-              <Info size={16} className="text-[#CBD3D6] flex-shrink-0 mt-0.5" />
+            <div className="mt-4 p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/20 max-w-sm text-xs text-indigo-300 flex items-start gap-2">
+              <Info size={16} className="text-indigo-400 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Silent Print (Zero Popup):</strong> Run Chrome with <code className="bg-[#0A1214] px-1 py-0.5 rounded text-[#CBD3D6] border border-[#32383B] font-mono">--kiosk-printing</code> flag for 0-second auto printing!
+                <strong>Silent Print (Zero Popup):</strong> Run Chrome with <code className="bg-black/40 px-1 py-0.5 rounded text-amber-300 font-mono">--kiosk-printing</code> flag for 0-second auto printing!
               </span>
             </div>
 
           </div>
 
           {/* Modal Footer */}
-          <div className="px-6 py-4 bg-[#0A1214] border-t border-[#32383B] flex items-center justify-between">
+          <div className="px-6 py-4 bg-[#0F172A] border-t border-slate-800 flex items-center justify-between">
             <button
               onClick={() => setIsReceiptModalOpen(false)}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-[#B2BEC2] hover:text-[#0A1214] hover:bg-[#CBD3D6] transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <span>Done / Next Sale</span>
               <ArrowRight size={14} />
@@ -217,7 +219,7 @@ export default function ReceiptModal() {
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold text-sm shadow-glow transition-all active:scale-[0.98] border border-[#EDF1F2] hover:border-[#CBD3D6]"
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-glow transition-all active:scale-[0.98]"
             >
               <Printer size={18} />
               <span>Print Receipt Now</span>

@@ -10,11 +10,11 @@ import {
   Trash2, 
   CheckCircle2, 
   X, 
-  RefreshCw, 
-  ShoppingBag, 
-  Edit3, 
-  Eye, 
-  AlertTriangle 
+  RefreshCw,
+  ShoppingBag,
+  Edit3,
+  Eye,
+  AlertTriangle
 } from 'lucide-react';
 import { usePOS } from '../context/POSContext';
 import { api } from '../utils/api';
@@ -101,24 +101,28 @@ export default function Purchases() {
     setSubmitting(true);
     try {
       await api.createPurchase({
-        supplierName,
-        supplierPhone,
+        supplierName: supplierName.trim(),
+        supplierPhone: supplierPhone.trim(),
+        items: formattedItems,
+        totalAmount,
+        paidAmount: totalAmount,
         paymentStatus,
         notes,
-        items: formattedItems,
-        totalAmount
+        createdBy: currentUser?.name || 'Admin'
       });
 
       setIsModalOpen(false);
+      // Reset form
       setSupplierName('');
       setSupplierPhone('');
       setNotes('');
       setPurchaseItems([{ productId: products[0]?._id || '', qty: 10, costPrice: products[0]?.costPrice || 100 }]);
       
-      loadPurchases();
-      loadProducts();
+      // Refresh purchases and inventory stock!
+      await loadPurchases();
+      await loadProducts();
     } catch (err) {
-      alert(err.message);
+      alert("Failed to record purchase: " + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -137,13 +141,14 @@ export default function Purchases() {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingPurchase) return;
+
     setSavingEdit(true);
     try {
       await api.updatePurchase(editingPurchase._id, editForm);
       setEditingPurchase(null);
-      loadPurchases();
+      await loadPurchases();
     } catch (err) {
-      alert(err.message);
+      alert("Failed to update purchase: " + err.message);
     } finally {
       setSavingEdit(false);
     }
@@ -151,14 +156,15 @@ export default function Purchases() {
 
   const handleConfirmDelete = async () => {
     if (!deletingPurchase) return;
+
     setIsDeleting(true);
     try {
       await api.deletePurchase(deletingPurchase._id);
       setDeletingPurchase(null);
-      loadPurchases();
-      loadProducts();
+      await loadPurchases();
+      await loadProducts(); // Refresh stock counts after rollback
     } catch (err) {
-      alert(err.message);
+      alert("Failed to delete purchase: " + err.message);
     } finally {
       setIsDeleting(false);
     }
@@ -166,29 +172,28 @@ export default function Purchases() {
 
   const filteredPurchases = purchases.filter(p => {
     const s = search.toLowerCase();
-    return (
-      p.supplierName?.toLowerCase().includes(s) ||
-      p.purchaseNo?.toLowerCase().includes(s)
-    );
+    return !search || 
+      p.supplierName.toLowerCase().includes(s) || 
+      p.purchaseNo.toLowerCase().includes(s);
   });
 
   return (
-    <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 max-w-7xl mx-auto bg-[#0A1214] text-[#EDF1F2]">
+    <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 max-w-7xl mx-auto">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-2xl text-[#EDF1F2] tracking-tight">
+          <h2 className="font-display font-extrabold text-2xl text-white tracking-tight">
             Purchases & Inward Stock
           </h2>
-          <p className="text-xs text-[#B2BEC2] mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Receive inventory from suppliers, edit shipments, or delete with safe stock rollback.
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold text-xs shadow-md transition-all active:scale-[0.98] self-start sm:self-auto"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-xs shadow-lg transition-all active:scale-[0.98] self-start sm:self-auto"
         >
           <PackagePlus size={16} />
           <span>New Stock Purchase</span>
@@ -196,32 +201,32 @@ export default function Purchases() {
       </div>
 
       {/* Search Toolbar */}
-      <div className="p-4 rounded-2xl bg-[#32383B]/20 border border-[#32383B] flex items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-[#111827] border border-slate-800 flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search size={15} className="absolute left-3 top-2.5 text-[#B2BEC2]" />
+          <Search size={15} className="absolute left-3 top-2.5 text-slate-500" />
           <input
             type="text"
             placeholder="Search by Supplier or Purchase #..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs text-[#EDF1F2] placeholder-[#B2BEC2]/60 focus:outline-none focus:border-[#CBD3D6]"
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-700/80 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
           />
         </div>
 
         <button
           onClick={() => loadPurchases()}
           title="Refresh"
-          className="p-2 rounded-xl bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#B2BEC2] transition-colors"
+          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
         >
           <RefreshCw size={15} />
         </button>
       </div>
 
       {/* Purchases Table */}
-      <div className="bg-[#32383B]/10 border border-[#32383B] rounded-3xl overflow-hidden shadow-xl">
+      <div className="bg-[#111827] border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#32383B]/40 text-[#B2BEC2] font-semibold border-b border-[#32383B]">
+            <thead className="bg-[#0F172A] text-slate-400 font-semibold border-b border-slate-800">
               <tr>
                 <th className="py-3.5 px-4">PURCHASE ORDER #</th>
                 <th className="py-3.5 px-4">SUPPLIER / DISTRIBUTOR</th>
@@ -232,43 +237,43 @@ export default function Purchases() {
                 <th className="py-3.5 px-4 text-right">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#32383B]/60">
+            <tbody className="divide-y divide-slate-800/80">
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-12 text-center text-[#B2BEC2]">
-                    <Truck size={32} className="text-[#32383B] mx-auto mb-2" />
-                    <p className="font-semibold text-[#EDF1F2]">No stock purchases found</p>
-                    <p className="text-xs text-[#B2BEC2] mt-0.5">Click 'New Stock Purchase' to record your first supplier shipment.</p>
+                  <td colSpan="7" className="py-12 text-center text-slate-500">
+                    <Truck size={32} className="text-slate-600 mx-auto mb-2" />
+                    <p className="font-semibold text-slate-300">No stock purchases found</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Click 'New Stock Purchase' to record your first supplier shipment.</p>
                   </td>
                 </tr>
               ) : (
                 filteredPurchases.map((p) => (
-                  <tr key={p._id || p.purchaseNo} className="hover:bg-[#32383B]/30 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-[#CBD3D6]">
+                  <tr key={p._id || p.purchaseNo} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-violet-400">
                       {p.purchaseNo}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-semibold text-[#EDF1F2]">{p.supplierName}</div>
-                      {p.supplierPhone && <div className="text-[10px] text-[#B2BEC2]">{p.supplierPhone}</div>}
+                      <div className="font-semibold text-slate-200">{p.supplierName}</div>
+                      {p.supplierPhone && <div className="text-[10px] text-slate-500">{p.supplierPhone}</div>}
                     </td>
-                    <td className="py-3 px-4 font-mono text-[#B2BEC2]">
+                    <td className="py-3 px-4 font-mono text-slate-400">
                       {new Date(p.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4">
                       <button
                         onClick={() => setViewingPurchase(p)}
-                        className="px-2 py-0.5 rounded-md bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#EDF1F2] font-mono text-[11px] inline-flex items-center gap-1 transition-colors"
+                        className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-violet-300 font-mono text-[11px] inline-flex items-center gap-1 transition-colors"
                       >
                         <Eye size={12} />
                         <span>{p.items?.length || 0} item(s)</span>
                       </button>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-[#32383B] text-[#CBD3D6] border border-[#32383B]">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         {p.paymentStatus || 'PAID'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#EDF1F2] text-sm">
+                    <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400 text-sm">
                       {settings.currency} {Number(p.totalAmount || 0).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -276,14 +281,14 @@ export default function Purchases() {
                         <button
                           onClick={() => openEditModal(p)}
                           title="Edit Supplier & Status"
-                          className="p-1.5 rounded-lg bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#B2BEC2] transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
                         >
                           <Edit3 size={13} />
                         </button>
                         <button
                           onClick={() => setDeletingPurchase(p)}
                           title="Delete Purchase & Rollback Stock"
-                          className="p-1.5 rounded-lg bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#B2BEC2] border border-[#32383B] transition-colors"
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -300,52 +305,52 @@ export default function Purchases() {
       {/* View Purchase Items Breakdown Modal */}
       {viewingPurchase && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#0A1214] border border-[#32383B] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
-            <div className="px-6 py-4 border-b border-[#32383B] bg-[#32383B]/30 flex items-center justify-between">
+          <div className="bg-[#111827] border border-slate-700 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Truck size={18} className="text-[#CBD3D6]" />
-                <h3 className="font-display font-bold text-[#EDF1F2] text-base">
+                <Truck size={18} className="text-violet-400" />
+                <h3 className="font-display font-bold text-white text-base">
                   Purchase Order: {viewingPurchase.purchaseNo}
                 </h3>
               </div>
-              <button onClick={() => setViewingPurchase(null)} className="text-[#B2BEC2] hover:text-[#EDF1F2]">
+              <button onClick={() => setViewingPurchase(null)} className="text-slate-400 hover:text-white">
                 <X size={16} />
               </button>
             </div>
 
             <div className="p-6 space-y-4 text-xs">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#32383B]/20 border border-[#32383B]">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800">
                 <div>
-                  <span className="text-[#B2BEC2] text-[10px] uppercase font-bold">Supplier:</span>
-                  <p className="font-semibold text-[#EDF1F2]">{viewingPurchase.supplierName}</p>
+                  <span className="text-slate-500 text-[10px] uppercase font-bold">Supplier:</span>
+                  <p className="font-semibold text-slate-200">{viewingPurchase.supplierName}</p>
                 </div>
                 {viewingPurchase.supplierPhone && (
                   <div className="text-right">
-                    <span className="text-[#B2BEC2] text-[10px] uppercase font-bold">Phone:</span>
-                    <p className="font-mono text-[#EDF1F2]">{viewingPurchase.supplierPhone}</p>
+                    <span className="text-slate-500 text-[10px] uppercase font-bold">Phone:</span>
+                    <p className="font-mono text-slate-300">{viewingPurchase.supplierPhone}</p>
                   </div>
                 )}
               </div>
 
-              <div className="divide-y divide-[#32383B]/60">
+              <div className="divide-y divide-slate-800">
                 {viewingPurchase.items?.map((it, idx) => (
                   <div key={idx} className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-[#EDF1F2]">{it.name}</p>
-                      <p className="text-[11px] text-[#B2BEC2] font-mono">
+                      <p className="font-semibold text-slate-200">{it.name}</p>
+                      <p className="text-[11px] text-slate-500 font-mono">
                         +{it.qty} units received @ {settings.currency} {Number(it.costPrice).toLocaleString()}
                       </p>
                     </div>
-                    <div className="text-right font-mono font-bold text-[#EDF1F2]">
+                    <div className="text-right font-mono font-bold text-slate-200">
                       {settings.currency} {Number(it.total || (it.qty * it.costPrice)).toLocaleString()}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-3 border-t border-[#32383B] flex justify-between items-center">
-                <span className="text-xs text-[#B2BEC2] font-medium">Total Purchase Amount:</span>
-                <span className="font-mono font-bold text-[#EDF1F2] text-base">
+              <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
+                <span className="text-xs text-slate-400 font-medium">Total Purchase Amount:</span>
+                <span className="font-mono font-bold text-emerald-400 text-base">
                   {settings.currency} {Number(viewingPurchase.totalAmount).toLocaleString()}
                 </span>
               </div>
@@ -357,47 +362,47 @@ export default function Purchases() {
       {/* Edit Purchase Modal */}
       {editingPurchase && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#0A1214] border border-[#32383B] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
-            <div className="px-6 py-4 border-b border-[#32383B] bg-[#32383B]/30 flex items-center justify-between">
+          <div className="bg-[#111827] border border-slate-700 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Edit3 size={18} className="text-[#CBD3D6]" />
-                <h3 className="font-display font-bold text-[#EDF1F2] text-base">
+                <Edit3 size={18} className="text-violet-400" />
+                <h3 className="font-display font-bold text-white text-base">
                   Edit Purchase: {editingPurchase.purchaseNo}
                 </h3>
               </div>
-              <button onClick={() => setEditingPurchase(null)} className="text-[#B2BEC2] hover:text-[#EDF1F2]">
+              <button onClick={() => setEditingPurchase(null)} className="text-slate-400 hover:text-white">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleSaveEdit} className="p-6 space-y-4 text-xs">
               <div>
-                <label className="block text-[#B2BEC2] font-medium mb-1">Supplier / Distributor Name *</label>
+                <label className="block text-slate-400 font-medium mb-1">Supplier / Distributor Name *</label>
                 <input
                   type="text"
                   required
                   value={editForm.supplierName}
                   onChange={(e) => setEditForm({ ...editForm, supplierName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#32383B]/20 border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[#B2BEC2] font-medium mb-1">Supplier Phone</label>
+                <label className="block text-slate-400 font-medium mb-1">Supplier Phone</label>
                 <input
                   type="text"
                   value={editForm.supplierPhone}
                   onChange={(e) => setEditForm({ ...editForm, supplierPhone: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#32383B]/20 border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[#B2BEC2] font-medium mb-1">Payment Status</label>
+                <label className="block text-slate-400 font-medium mb-1">Payment Status</label>
                 <select
                   value={editForm.paymentStatus}
                   onChange={(e) => setEditForm({ ...editForm, paymentStatus: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#32383B]/20 border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
                 >
                   <option value="paid">Paid (Cleared)</option>
                   <option value="partial">Partial</option>
@@ -406,27 +411,27 @@ export default function Purchases() {
               </div>
 
               <div>
-                <label className="block text-[#B2BEC2] font-medium mb-1">Notes</label>
+                <label className="block text-slate-400 font-medium mb-1">Notes</label>
                 <textarea
                   rows="2"
                   value={editForm.notes}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-[#32383B]/20 border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
-              <div className="pt-3 border-t border-[#32383B] flex justify-end gap-2.5">
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setEditingPurchase(null)}
-                  className="px-4 py-2 rounded-xl bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#B2BEC2] font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="px-5 py-2 rounded-xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold flex items-center gap-1.5 transition-colors"
+                  className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold flex items-center gap-1.5"
                 >
                   {savingEdit && <RefreshCw size={13} className="animate-spin" />}
                   <span>Save Changes</span>
@@ -440,30 +445,30 @@ export default function Purchases() {
       {/* Delete / Rollback Confirmation Modal */}
       {deletingPurchase && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#0A1214] border border-[#32383B] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
-            <div className="px-6 py-4 border-b border-[#32383B] bg-[#32383B]/30 flex items-center justify-between">
+          <div className="bg-[#111827] border border-rose-500/40 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-rose-500/20 bg-rose-500/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={18} className="text-[#CBD3D6]" />
-                <h3 className="font-display font-bold text-[#EDF1F2] text-base">
+                <AlertTriangle size={18} className="text-rose-400" />
+                <h3 className="font-display font-bold text-white text-base">
                   Delete Purchase & Rollback Stock?
                 </h3>
               </div>
-              <button onClick={() => setDeletingPurchase(null)} className="text-[#B2BEC2] hover:text-[#EDF1F2]">
+              <button onClick={() => setDeletingPurchase(null)} className="text-slate-400 hover:text-white">
                 <X size={16} />
               </button>
             </div>
 
             <div className="p-6 space-y-4 text-xs">
-              <p className="text-[#EDF1F2]">
-                Are you sure you want to delete purchase <span className="font-mono font-bold text-[#CBD3D6]">{deletingPurchase.purchaseNo}</span> from <span className="font-semibold text-[#EDF1F2]">{deletingPurchase.supplierName}</span>?
+              <p className="text-slate-300">
+                Are you sure you want to delete purchase <span className="font-mono font-bold text-white">{deletingPurchase.purchaseNo}</span> from <span className="font-semibold text-slate-200">{deletingPurchase.supplierName}</span>?
               </p>
 
-              <div className="p-3.5 rounded-xl bg-[#32383B]/40 border border-[#32383B] text-[#B2BEC2] space-y-1">
-                <p className="font-bold flex items-center gap-1.5 text-[#EDF1F2]">
-                  <CheckCircle2 size={14} className="text-[#CBD3D6]" />
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 space-y-1">
+                <p className="font-bold flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-rose-400" />
                   Automatic Stock Rollback Safeguard
                 </p>
-                <p className="text-[11px] text-[#B2BEC2]">
+                <p className="text-[11px] text-slate-400">
                   The {deletingPurchase.items?.length || 0} product item(s) received in this order will have their stock deducted back from current inventory to keep counts accurate.
                 </p>
               </div>
@@ -472,7 +477,7 @@ export default function Purchases() {
                 <button
                   type="button"
                   onClick={() => setDeletingPurchase(null)}
-                  className="px-4 py-2 rounded-xl bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#B2BEC2] font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
                 >
                   Keep Purchase
                 </button>
@@ -480,7 +485,7 @@ export default function Purchases() {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
-                  className="px-5 py-2 rounded-xl bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] border border-[#CBD3D6]/40 text-[#EDF1F2] font-bold flex items-center gap-1.5 transition-colors"
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold flex items-center gap-1.5 shadow-lg shadow-rose-600/20"
                 >
                   {isDeleting && <RefreshCw size={13} className="animate-spin" />}
                   <span>Confirm Delete & Rollback</span>
@@ -494,15 +499,15 @@ export default function Purchases() {
       {/* New Purchase Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#0A1214] border border-[#32383B] rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            <div className="px-6 py-4 border-b border-[#32383B] bg-[#32383B]/30 flex items-center justify-between">
+          <div className="bg-[#111827] border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-6 py-4 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Truck size={18} className="text-[#CBD3D6]" />
-                <h3 className="font-display font-bold text-[#EDF1F2] text-base">Record Inward Stock Purchase</h3>
+                <Truck size={18} className="text-violet-400" />
+                <h3 className="font-display font-bold text-white text-base">Record Inward Stock Purchase</h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-[#B2BEC2] hover:text-[#EDF1F2]"
+                className="text-slate-400 hover:text-white"
               >
                 <X size={16} />
               </button>
@@ -513,24 +518,24 @@ export default function Purchases() {
               {/* Supplier Info */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[#B2BEC2] font-medium mb-1">Supplier / Distributor Name *</label>
+                  <label className="block text-slate-400 font-medium mb-1">Supplier / Distributor Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Al-Rehman FMCG Wholesalers"
                     value={supplierName}
                     onChange={(e) => setSupplierName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#32383B]/20 border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#B2BEC2] font-medium mb-1">Supplier Phone</label>
+                  <label className="block text-slate-400 font-medium mb-1">Supplier Phone</label>
                   <input
                     type="text"
                     placeholder="0321-1234567"
                     value={supplierPhone}
                     onChange={(e) => setSupplierPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#32383B]/20 border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -538,13 +543,13 @@ export default function Purchases() {
               {/* Items to receive */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[#B2BEC2] font-semibold uppercase tracking-wider text-[11px]">
+                  <label className="block text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
                     Received Products & Stock Quantities
                   </label>
                   <button
                     type="button"
                     onClick={handleAddItemRow}
-                    className="flex items-center gap-1 text-xs text-[#CBD3D6] hover:text-[#EDF1F2] font-medium"
+                    className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-medium"
                   >
                     <Plus size={14} />
                     <span>Add Another Item</span>
@@ -553,12 +558,12 @@ export default function Purchases() {
 
                 <div className="space-y-2.5">
                   {purchaseItems.map((item, idx) => (
-                    <div key={idx} className="p-3 rounded-2xl bg-[#32383B]/20 border border-[#32383B] grid grid-cols-12 gap-2 items-center">
+                    <div key={idx} className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-6">
                         <select
                           value={item.productId}
                           onChange={(e) => handleUpdateItemRow(idx, 'productId', e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6] text-xs"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500 text-xs"
                         >
                           {products.map(p => (
                             <option key={p._id} value={p._id}>
@@ -576,7 +581,7 @@ export default function Purchases() {
                             placeholder="Qty to Add"
                             value={item.qty}
                             onChange={(e) => handleUpdateItemRow(idx, 'qty', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] font-mono text-xs focus:outline-none focus:border-[#CBD3D6]"
+                            className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-mono text-xs focus:outline-none focus:border-indigo-500"
                           />
                         </div>
                       </div>
@@ -588,7 +593,7 @@ export default function Purchases() {
                           placeholder="Cost Price"
                           value={item.costPrice}
                           onChange={(e) => handleUpdateItemRow(idx, 'costPrice', e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] font-mono text-xs focus:outline-none focus:border-[#CBD3D6]"
+                          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 font-mono text-xs focus:outline-none focus:border-indigo-500"
                         />
                       </div>
 
@@ -596,7 +601,7 @@ export default function Purchases() {
                         <button
                           type="button"
                           onClick={() => handleRemoveItemRow(idx)}
-                          className="p-1.5 text-[#B2BEC2] hover:text-[#CBD3D6]"
+                          className="p-1.5 text-slate-500 hover:text-rose-400"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -607,9 +612,9 @@ export default function Purchases() {
               </div>
 
               {/* Total Summary */}
-              <div className="p-4 rounded-2xl bg-[#32383B]/20 border border-[#32383B] flex items-center justify-between">
-                <span className="text-xs text-[#B2BEC2]">Total Inward Purchase Cost:</span>
-                <span className="font-mono text-xl font-bold text-[#EDF1F2]">
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs text-slate-400">Total Inward Purchase Cost:</span>
+                <span className="font-mono text-xl font-bold text-emerald-400">
                   {settings.currency} {calculateTotal().toLocaleString()}
                 </span>
               </div>
@@ -618,14 +623,14 @@ export default function Purchases() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-[#B2BEC2] hover:text-[#EDF1F2] hover:bg-[#32383B] transition-colors"
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold shadow-md transition-all active:scale-[0.98]"
+                  className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold shadow-lg"
                 >
                   {submitting ? 'Updating Inventory...' : 'Receive Stock & Increment Inventory'}
                 </button>

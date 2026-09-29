@@ -115,7 +115,7 @@ function MainLayout() {
   }, [activeTab]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#0A1214] text-[#EDF1F2] overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-[#080C15] text-slate-100 overflow-hidden select-none">
       {/* Top Navbar */}
       <Navbar 
         activeTab={activeTab} 

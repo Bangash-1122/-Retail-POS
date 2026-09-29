@@ -3,46 +3,43 @@
 @tailwind utilities;
 
 :root {
-    color-scheme: dark;
+  color-scheme: dark;
 }
 
 body {
-    margin: 0;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #0B0F19;
-    overflow-x: hidden;
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #0B0F19;
+  overflow-x: hidden;
 }
 
 /* Custom Scrollbar for fast-scrolling products */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  width: 6px;
+  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-    background: #0B0F19;
+  background: #0B0F19;
 }
-
 ::-webkit-scrollbar-thumb {
-    background: #1E293B;
-    border-radius: 9999px;
+  background: #1E293B;
+  border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+  background: #334155;
 }
 
 .glass-panel {
-    background: rgba(17, 24, 39, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 24, 39, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
-    background: rgba(30, 41, 59, 0.6);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* ================================================================
@@ -50,42 +47,40 @@ body {
    Works for USB, Wi-Fi, and Bluetooth 80mm & 58mm Thermal Printers
 ================================================================ */
 @media screen {
-
-    /* On screen, the hidden printable element is not visible */
-    #thermal-receipt-printable {
-        display: none;
-    }
+  /* On screen, the hidden printable element is not visible */
+  #thermal-receipt-printable {
+    display: none;
+  }
 }
 
 @media print {
+  /* Hide the entire webpage UI (navbar, cart, cards, buttons) */
+  body * {
+    visibility: hidden !important;
+  }
 
-    /* Hide the entire webpage UI (navbar, cart, cards, buttons) */
-    body * {
-        visibility: hidden !important;
-    }
+  /* Make ONLY the receipt container and its children visible */
+  #thermal-receipt-printable,
+  #thermal-receipt-printable * {
+    visibility: visible !important;
+  }
 
-    /* Make ONLY the receipt container and its children visible */
-    #thermal-receipt-printable,
-    #thermal-receipt-printable * {
-        visibility: visible !important;
-    }
+  /* Position receipt at very top-left of page without margins */
+  #thermal-receipt-printable {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
 
-    /* Position receipt at very top-left of page without margins */
-    #thermal-receipt-printable {
-        display: block !important;
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: #ffffff !important;
-        color: #000000 !important;
-        box-shadow: none !important;
-    }
-
-    /* Zero margins on printer roll paper */
-    @page {
-        margin: 0mm !important;
-        size: auto !important;
-    }
+  /* Zero margins on printer roll paper */
+  @page {
+    margin: 0mm !important;
+    size: auto !important;
+  }
 }
