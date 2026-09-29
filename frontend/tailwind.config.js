@@ -8,25 +8,35 @@ export default {
   theme: {
     extend: {
       colors: {
+        // User's custom palette
+        pos: {
+          bg: '#0A1214',         // Deep obsidian background
+          surface: '#32383B',    // Card, panel, container surface
+          card: '#162226',       // Intermediate dark card tone
+          border: '#32383B',     // Border tone
+          muted: '#B2BEC2',      // Muted / secondary text & icon tone
+          hover: '#CBD3D6',      // Primary hover highlight color
+          light: '#EDF1F2',      // Crisp light primary text
+        },
         brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+          50: '#EDF1F2',
+          100: '#CBD3D6',
+          200: '#B2BEC2',
+          300: '#8A979B',
+          400: '#606C70',
+          500: '#434B4F',
+          600: '#32383B',
+          700: '#23292C',
+          800: '#171E20',
+          900: '#0F1618',
+          950: '#0A1214',
         },
         posDark: {
-          bg: '#0B0F19',
-          card: '#111827',
-          surface: '#1E293B',
-          border: '#334155',
-          input: '#0F172A',
+          bg: '#0A1214',
+          card: '#32383B',
+          surface: '#32383B',
+          border: '#32383B',
+          input: '#0A1214',
         }
       },
       fontFamily: {
@@ -35,8 +45,8 @@ export default {
         mono: ['JetBrains Mono', 'Courier New', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 25px -5px rgba(99, 102, 241, 0.4)',
-        glowEmerald: '0 0 25px -5px rgba(16, 185, 129, 0.4)',
+        glow: '0 0 25px -4px rgba(203, 211, 214, 0.25)',
+        glowEmerald: '0 0 25px -4px rgba(203, 211, 214, 0.25)',
       },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',

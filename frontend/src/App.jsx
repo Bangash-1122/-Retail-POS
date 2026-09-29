@@ -14,9 +14,58 @@ import Staff from './pages/Staff';
 import PaymentModal from './components/pos/PaymentModal';
 import ReceiptModal from './components/pos/ReceiptModal';
 
+const VALID_ROUTES = [
+  'landing',
+  'login',
+  'register',
+  'inventory',
+  'purchases',
+  'expenses',
+  'sales',
+  'dashboard',
+  'staff',
+  'settings'
+];
+
+function getInitialRoute() {
+  const hash = window.location.hash.replace('#/', '').replace('#', '').toLowerCase().trim();
+  if (VALID_ROUTES.includes(hash)) {
+    return hash;
+  }
+  // Also check pathname (e.g. /register)
+  const path = window.location.pathname.replace(/^\//, '').toLowerCase().trim();
+  if (VALID_ROUTES.includes(path)) {
+    return path;
+  }
+  return 'landing';
+}
+
 function MainLayout() {
-  const [activeTab, setActiveTab] = useState('landing');
+  const [activeTab, setActiveTabState] = useState(getInitialRoute);
   const { currentUser } = usePOS();
+
+  // Synchronize activeTab with URL hash
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    if (window.location.hash !== `#/${tab}`) {
+      window.history.pushState(null, '', `#/${tab}`);
+    }
+  };
+
+  // Listen to browser Back/Forward (popstate & hashchange)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const currentRoute = getInitialRoute();
+      setActiveTabState(currentRoute);
+    };
+
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
 
   // Global Keyboard Shortcuts (F9 Fullscreen, Alt+1-8 Navigation, F2 Quick Register)
   useEffect(() => {
@@ -66,7 +115,7 @@ function MainLayout() {
   }, [activeTab]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#080C15] text-slate-100 overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-[#0A1214] text-[#EDF1F2] overflow-hidden select-none">
       {/* Top Navbar */}
       <Navbar 
         activeTab={activeTab} 
@@ -74,7 +123,7 @@ function MainLayout() {
         onOpenLogin={() => setActiveTab('login')} 
       />
 
-      {/* Main Tab Content */}
+      {/* Main Tab / Page Routing Content */}
       <main className="flex-1 flex overflow-hidden">
         {activeTab === 'landing' && (
           <LandingPage 

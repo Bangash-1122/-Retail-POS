@@ -91,15 +91,15 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto">
+    <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-6 max-w-5xl mx-auto bg-[#0A1214] text-[#EDF1F2]">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-extrabold text-2xl text-white tracking-tight">
+          <h2 className="font-display font-extrabold text-2xl text-[#EDF1F2] tracking-tight">
             Store & Printer Settings
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#B2BEC2] mt-1">
             Configure thermal receipt header, paper roll width, sound effects, and silent printing.
           </p>
         </div>
@@ -108,7 +108,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={handleTestPrint}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white border border-slate-700 text-xs font-semibold transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#32383B] hover:bg-[#CBD3D6] hover:text-[#0A1214] text-[#EDF1F2] border border-[#32383B] text-xs font-semibold transition-all shadow-sm"
           >
             <Printer size={15} />
             <span>Test Print Receipt</span>
@@ -117,8 +117,8 @@ export default function Settings() {
       </div>
 
       {successMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
-          <CheckCircle2 size={16} />
+        <div className="p-3.5 rounded-2xl bg-[#32383B] border border-[#CBD3D6]/40 text-[#EDF1F2] text-xs flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-[#CBD3D6]" />
           <span>{successMsg}</span>
         </div>
       )}
@@ -126,14 +126,14 @@ export default function Settings() {
       <form onSubmit={handleSave} className="space-y-6">
         
         {/* ── Section 1: Thermal Printer Preferences ── */}
-        <div className="p-6 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl space-y-5">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        <div className="p-6 rounded-3xl bg-[#32383B]/20 border border-[#32383B] shadow-xl space-y-5">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[#32383B]">
+            <div className="p-2 rounded-xl bg-[#32383B] text-[#CBD3D6] border border-[#32383B]">
               <Printer size={18} />
             </div>
             <div>
-              <h3 className="font-display font-bold text-white text-base">Thermal Printer Configuration</h3>
-              <p className="text-xs text-slate-400">Works universally with USB, Wi-Fi, and Bluetooth POS printers</p>
+              <h3 className="font-display font-bold text-[#EDF1F2] text-base">Thermal Printer Configuration</h3>
+              <p className="text-xs text-[#B2BEC2]">Works universally with USB, Wi-Fi, and Bluetooth POS printers</p>
             </div>
           </div>
 
@@ -141,30 +141,30 @@ export default function Settings() {
             
             {/* Paper Width Roll */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[#B2BEC2] mb-1.5 uppercase tracking-wider">
                 Printer Paper Roll Width
               </label>
               <select
                 name="paperWidth"
                 value={formData.paperWidth || '80mm'}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
               >
                 <option value="80mm">80mm (Standard POS Roll - 3 inch)</option>
                 <option value="58mm">58mm (Compact Mobile POS Roll - 2 inch)</option>
               </select>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Choose the size that matches your thermal paper roll roll width.
+              <p className="text-[11px] text-[#B2BEC2] mt-1">
+                Choose the size that matches your thermal paper roll width.
               </p>
             </div>
 
             {/* Auto Print on Checkout */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0A1214] border border-[#32383B]">
               <div>
-                <label className="text-xs font-semibold text-slate-200 block">
+                <label className="text-xs font-semibold text-[#EDF1F2] block">
                   Auto-Print on Checkout
                 </label>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-[#B2BEC2]">
                   Instantly open print dialog when sale completes
                 </span>
               </div>
@@ -173,17 +173,17 @@ export default function Settings() {
                 name="autoPrintReceipt"
                 checked={formData.autoPrintReceipt}
                 onChange={handleChange}
-                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700"
+                className="w-4 h-4 rounded text-[#CBD3D6] focus:ring-[#CBD3D6] bg-[#32383B] border-[#32383B]"
               />
             </div>
 
             {/* Scanner Beep Sound */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#0A1214] border border-[#32383B]">
               <div>
-                <label className="text-xs font-semibold text-slate-200 block">
+                <label className="text-xs font-semibold text-[#EDF1F2] block">
                   Barcode Scanner Beep Sound
                 </label>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-[#B2BEC2]">
                   Audio chime feedback on scan & item additions
                 </span>
               </div>
@@ -192,13 +192,13 @@ export default function Settings() {
                 name="enableBeep"
                 checked={formData.enableBeep}
                 onChange={handleChange}
-                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-slate-800 border-slate-700"
+                className="w-4 h-4 rounded text-[#CBD3D6] focus:ring-[#CBD3D6] bg-[#32383B] border-[#32383B]"
               />
             </div>
 
             {/* Tax Rate */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-[#B2BEC2] mb-1.5 uppercase tracking-wider">
                 Sales Tax (GST / VAT %)
               </label>
               <input
@@ -208,114 +208,114 @@ export default function Settings() {
                 name="taxRate"
                 value={formData.taxRate}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs text-[#EDF1F2] font-mono focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
           </div>
         </div>
 
         {/* ── Section 2: Store Branding & Receipt Header ── */}
-        <div className="p-6 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl space-y-5">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        <div className="p-6 rounded-3xl bg-[#32383B]/20 border border-[#32383B] shadow-xl space-y-5">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[#32383B]">
+            <div className="p-2 rounded-xl bg-[#32383B] text-[#CBD3D6] border border-[#32383B]">
               <Store size={18} />
             </div>
             <div>
-              <h3 className="font-display font-bold text-white text-base">Store Branding & Receipt Header</h3>
-              <p className="text-xs text-slate-400">These details appear at the top and bottom of every printed receipt</p>
+              <h3 className="font-display font-bold text-[#EDF1F2] text-base">Store Branding & Receipt Header</h3>
+              <p className="text-xs text-[#B2BEC2]">These details appear at the top and bottom of every printed receipt</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block text-slate-400 font-medium mb-1">Store / Business Name *</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">Store / Business Name *</label>
               <input
                 type="text"
                 required
                 name="storeName"
                 value={formData.storeName}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">Store Tagline</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">Store Tagline</label>
               <input
                 type="text"
                 name="storeTagline"
                 value={formData.storeTagline}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-slate-400 font-medium mb-1">Store Address</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">Store Address</label>
               <input
                 type="text"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">Contact Phone</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">Contact Phone</label>
               <input
                 type="text"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">NTN / Tax Registration #</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">NTN / Tax Registration #</label>
               <input
                 type="text"
                 name="ntn"
                 value={formData.ntn}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] font-mono focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">Currency Symbol</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">Currency Symbol</label>
               <input
                 type="text"
                 name="currency"
                 value={formData.currency}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] font-mono focus:outline-none focus:border-[#CBD3D6]"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-slate-400 font-medium mb-1">Receipt Footer Note / Return Policy</label>
+              <label className="block text-[#B2BEC2] font-medium mb-1">Receipt Footer Note / Return Policy</label>
               <textarea
                 rows="3"
                 name="receiptFooter"
                 value={formData.receiptFooter}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6] font-mono"
               />
             </div>
           </div>
         </div>
 
         {/* ── Section 3: Dynamic Product Categories, Expense Categories & Payment Methods ── */}
-        <div className="p-6 rounded-3xl bg-[#111827] border border-slate-800 shadow-xl space-y-6">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <div className="p-6 rounded-3xl bg-[#32383B]/20 border border-[#32383B] shadow-xl space-y-6">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[#32383B]">
+            <div className="p-2 rounded-xl bg-[#32383B] text-[#CBD3D6] border border-[#32383B]">
               <Tag size={18} />
             </div>
             <div>
-              <h3 className="font-display font-bold text-white text-base">Dynamic Categories & Payment Methods</h3>
-              <p className="text-xs text-slate-400">Add or remove custom product categories, expense classifications, and checkout payment methods</p>
+              <h3 className="font-display font-bold text-[#EDF1F2] text-base">Dynamic Categories & Payment Methods</h3>
+              <p className="text-xs text-[#B2BEC2]">Add or remove custom product categories, expense classifications, and checkout payment methods</p>
             </div>
           </div>
 
@@ -324,13 +324,13 @@ export default function Settings() {
             {/* Product Categories */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-[#B2BEC2] uppercase tracking-wider">
                   Product Categories ({settings.productCategories?.length || 0})
                 </label>
               </div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {(settings.productCategories || []).map((cat) => (
-                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-medium text-slate-200">
+                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs font-medium text-[#EDF1F2]">
                     <span>{cat}</span>
                     <button
                       type="button"
@@ -340,7 +340,7 @@ export default function Settings() {
                           await loadSettings();
                         }
                       }}
-                      className="text-slate-500 hover:text-rose-400 ml-0.5"
+                      className="text-[#B2BEC2] hover:text-[#EDF1F2] ml-0.5"
                       title="Remove category"
                     >
                       ✕
@@ -354,7 +354,7 @@ export default function Settings() {
                   placeholder="New product category..."
                   value={newProdCat}
                   onChange={(e) => setNewProdCat(e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
                 />
                 <button
                   type="button"
@@ -364,7 +364,7 @@ export default function Settings() {
                     await loadSettings();
                     setNewProdCat('');
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold text-xs transition-colors"
                 >
                   + Add
                 </button>
@@ -372,15 +372,15 @@ export default function Settings() {
             </div>
 
             {/* Expense Categories */}
-            <div className="pt-4 border-t border-slate-800">
+            <div className="pt-4 border-t border-[#32383B]">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-[#B2BEC2] uppercase tracking-wider">
                   Expense Categories ({settings.expenseCategories?.length || 0})
                 </label>
               </div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {(settings.expenseCategories || []).map((cat) => (
-                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-medium text-amber-300">
+                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs font-medium text-[#EDF1F2]">
                     <span>{cat}</span>
                     <button
                       type="button"
@@ -390,7 +390,7 @@ export default function Settings() {
                           await loadSettings();
                         }
                       }}
-                      className="text-slate-500 hover:text-rose-400 ml-0.5"
+                      className="text-[#B2BEC2] hover:text-[#EDF1F2] ml-0.5"
                       title="Remove expense category"
                     >
                       ✕
@@ -404,7 +404,7 @@ export default function Settings() {
                   placeholder="New expense category (e.g. Fuel, Tea)..."
                   value={newExpCat}
                   onChange={(e) => setNewExpCat(e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
                 />
                 <button
                   type="button"
@@ -414,7 +414,7 @@ export default function Settings() {
                     await loadSettings();
                     setNewExpCat('');
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold text-xs transition-colors"
                 >
                   + Add
                 </button>
@@ -422,15 +422,15 @@ export default function Settings() {
             </div>
 
             {/* Payment Methods */}
-            <div className="pt-4 border-t border-slate-800">
+            <div className="pt-4 border-t border-[#32383B]">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-[#B2BEC2] uppercase tracking-wider">
                   Payment Methods ({settings.paymentMethods?.length || 0})
                 </label>
               </div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {(settings.paymentMethods || []).map((method) => (
-                  <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-medium text-emerald-400">
+                  <span key={method} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs font-medium text-[#CBD3D6]">
                     <span>{method}</span>
                     <button
                       type="button"
@@ -440,7 +440,7 @@ export default function Settings() {
                           await loadSettings();
                         }
                       }}
-                      className="text-slate-500 hover:text-rose-400 ml-0.5"
+                      className="text-[#B2BEC2] hover:text-[#EDF1F2] ml-0.5"
                       title="Remove payment method"
                     >
                       ✕
@@ -454,7 +454,7 @@ export default function Settings() {
                   placeholder="New payment method (e.g. Nayapay, Voucher)..."
                   value={newPayMethod}
                   onChange={(e) => setNewPayMethod(e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-[#0A1214] border border-[#32383B] text-xs text-[#EDF1F2] focus:outline-none focus:border-[#CBD3D6]"
                 />
                 <button
                   type="button"
@@ -464,7 +464,7 @@ export default function Settings() {
                     await loadSettings();
                     setNewPayMethod('');
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold text-xs transition-colors"
                 >
                   + Add
                 </button>
@@ -475,24 +475,24 @@ export default function Settings() {
         </div>
 
         {/* ── Section 4: Pro POS Tip: Kiosk Silent Printing Setup ── */}
-        <div className="p-6 rounded-3xl bg-indigo-950/30 border border-indigo-500/20 shadow-xl space-y-3">
+        <div className="p-6 rounded-3xl bg-[#32383B]/10 border border-[#32383B] shadow-xl space-y-3">
           <div className="flex items-center gap-2">
-            <Terminal size={18} className="text-indigo-400" />
-            <h4 className="font-display font-bold text-white text-sm">
+            <Terminal size={18} className="text-[#CBD3D6]" />
+            <h4 className="font-display font-bold text-[#EDF1F2] text-sm">
               Pro POS Tip: How to Enable 0-Click Silent Thermal Printing
             </h4>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-[#B2BEC2] leading-relaxed">
             In busy retail counters, cashiers should not have to see the Windows print preview pop-up every single time.
             You can make Chrome or Edge print immediately to your thermal receipt printer:
           </p>
-          <div className="p-3 rounded-2xl bg-black/60 border border-white/5 font-mono text-xs text-indigo-300 space-y-1">
-            <p className="text-slate-400">// Add this flag to your Google Chrome Desktop Shortcut Target:</p>
-            <p className="text-amber-300 font-bold">
+          <div className="p-3 rounded-2xl bg-[#0A1214] border border-[#32383B] font-mono text-xs text-[#CBD3D6] space-y-1">
+            <p className="text-[#B2BEC2]">// Add this flag to your Google Chrome Desktop Shortcut Target:</p>
+            <p className="text-[#EDF1F2] font-bold">
               "C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing
             </p>
           </div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-[#B2BEC2]">
             Set your thermal printer as your <strong>Default Windows Printer</strong>. Whenever you click <strong>Complete Sale</strong>, the printer will immediately output the paper slip without any dialogs!
           </p>
         </div>
@@ -502,7 +502,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-glow transition-all active:scale-[0.98]"
+            className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#EDF1F2] hover:bg-[#CBD3D6] text-[#0A1214] font-bold text-sm shadow-md transition-all active:scale-[0.98]"
           >
             <Save size={18} />
             <span>{saving ? 'Saving...' : 'Save Settings'}</span>
